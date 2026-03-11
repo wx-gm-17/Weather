@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Cannoli's Weather Station</title>
 
-<!-- Chart.js + zoom plugin + luxon adapter -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
@@ -58,7 +57,6 @@ canvas { background:white; border-radius:10px; max-width:100%; }
   <div class="card" onclick="openChart('rain')">Rain<br><span id="rain">--</span> in</div>
 </div>
 
-<!-- Fullscreen chart container -->
 <div class="fullscreen-chart" id="fullscreenChartContainer">
   <div class="fullscreen-toolbar">
     <button onclick="setIntervalHours(6)">6h</button>
@@ -226,10 +224,19 @@ function renderFullChart(){
   });
 }
 
-// Initial load
-loadCurrent();
-loadHistory();
-setInterval(loadCurrent,60000); // refresh live data every minute
+// Initial load with built-in rate limit delay
+async function initializeDashboard() {
+  await loadCurrent();
+  
+  // Wait 1.5 seconds (1500 milliseconds) before loading history
+  // to stay well under the 1 request/second limit
+  setTimeout(() => {
+    loadHistory();
+  }, 1500);
+}
+
+initializeDashboard();
+setInterval(loadCurrent, 60000); // refresh live data every minute
 </script>
 
 </body>
