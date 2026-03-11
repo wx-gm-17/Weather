@@ -2,87 +2,75 @@
 <html>
 
 <head>
-
 <meta charset="UTF-8">
 <title>Cannoli's Weather Station</title>
 
+<!-- Chart.js + zoom plugin -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
 
 <style>
-
-body{
-font-family:Segoe UI;
-background:#0c1b2a;
-color:white;
-margin:0;
+body {
+  font-family:Segoe UI, Arial;
+  background:#0c1b2a;
+  color:white;
+  margin:0;
 }
-
-header{
-background:#142b44;
-padding:25px;
-text-align:center;
-font-size:32px;
+header {
+  background:#142b44;
+  padding:25px;
+  text-align:center;
+  font-size:32px;
 }
-
-.dashboard{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:20px;
-padding:20px;
+.dashboard {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+  padding:20px;
 }
-
-.card{
-background:#1c3d5a;
-padding:20px;
-border-radius:12px;
-text-align:center;
+.card {
+  background:#1c3d5a;
+  padding:20px;
+  border-radius:12px;
+  text-align:center;
 }
-
-.temp{
-font-size:70px;
-font-weight:bold;
+.temp {
+  font-size:70px;
+  font-weight:bold;
 }
-
-.value{
-font-size:28px;
+.value {
+  font-size:28px;
 }
-
-canvas{
-background:white;
-border-radius:10px;
+canvas {
+  background:white;
+  border-radius:10px;
 }
-
-.graph{
-padding:20px;
+.graph {
+  padding:20px;
 }
-
-.windCompass{
-width:120px;
-height:120px;
-border:5px solid white;
-border-radius:50%;
-margin:auto;
-position:relative;
+.windCompass {
+  width:120px;
+  height:120px;
+  border:5px solid white;
+  border-radius:50%;
+  margin:auto;
+  position:relative;
 }
-
-.arrow{
-width:4px;
-height:50px;
-background:red;
-position:absolute;
-top:15px;
-left:50%;
-transform-origin:bottom center;
+.arrow {
+  width:4px;
+  height:50px;
+  background:red;
+  position:absolute;
+  top:15px;
+  left:50%;
+  transform-origin:bottom center;
 }
-
-footer{
-text-align:center;
-padding:20px;
-opacity:.7;
+footer {
+  text-align:center;
+  padding:20px;
+  opacity:.7;
 }
-
 </style>
-
 </head>
 
 <body>
@@ -92,153 +80,160 @@ opacity:.7;
 </header>
 
 <div class="dashboard">
+  <div class="card">
+    Temperature
+    <div class="temp" id="temp">--</div>
+  </div>
 
-<div class="card">
-Temperature
-<div class="temp" id="temp">--</div>
-</div>
+  <div class="card">
+    Humidity
+    <div class="value" id="humidity">--</div>
+  </div>
 
-<div class="card">
-Humidity
-<div class="value" id="humidity">--</div>
-</div>
+  <div class="card">
+    Pressure
+    <div class="value" id="pressure">--</div>
+  </div>
 
-<div class="card">
-Pressure
-<div class="value" id="pressure">--</div>
-</div>
+  <div class="card">
+    Wind Speed
+    <div class="value" id="wind">--</div>
+  </div>
 
-<div class="card">
-Wind Speed
-<div class="value" id="wind">--</div>
-</div>
+  <div class="card">
+    Wind Gust
+    <div class="value" id="gust">--</div>
+  </div>
 
-<div class="card">
-Wind Gust
-<div class="value" id="gust">--</div>
-</div>
+  <div class="card">
+    Rain Today
+    <div class="value" id="rain">--</div>
+  </div>
 
-<div class="card">
-Rain Today
-<div class="value" id="rain">--</div>
-</div>
-
-<div class="card">
-
-Wind Direction
-
-<div class="windCompass">
-<div class="arrow" id="arrow"></div>
-</div>
-
-</div>
-
+  <div class="card">
+    Wind Direction
+    <div class="windCompass">
+      <div class="arrow" id="arrow"></div>
+    </div>
+  </div>
 </div>
 
 <div class="graph">
-<h2 style="text-align:center;">24 Hour Temperature</h2>
-<canvas id="tempChart"></canvas>
+  <h2 style="text-align:center;">Temperature (24h)</h2>
+  <canvas id="tempChart"></canvas>
 </div>
 
 <div class="graph">
-<h2 style="text-align:center;">Wind Speed</h2>
-<canvas id="windChart"></canvas>
+  <h2 style="text-align:center;">Wind Speed (24h)</h2>
+  <canvas id="windChart"></canvas>
 </div>
 
 <div class="graph">
-<h2 style="text-align:center;">Humidity</h2>
-<canvas id="humidityChart"></canvas>
+  <h2 style="text-align:center;">Humidity (24h)</h2>
+  <canvas id="humidityChart"></canvas>
+</div>
+
+<div class="graph">
+  <h2 style="text-align:center;">Rain (24h)</h2>
+  <canvas id="rainChart"></canvas>
 </div>
 
 <footer id="time"></footer>
 
 <script>
+const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
+const appKey = "b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f";
+const mac = "4C:EB:D6:1E:22:57";
 
-const apiKey="0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
-const appKey="b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f";
-const mac="4C:EB:D6:1E:22:57";
+async function loadCurrent() {
+  const url = `https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
+  const r = await fetch(url);
+  const data = await r.json();
+  const w = data[0].lastData;
 
-async function loadCurrent(){
-
-const url=`https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
-
-const r=await fetch(url);
-const data=await r.json();
-
-const w=data[0].lastData;
-
-document.getElementById("temp").innerHTML=w.tempf+"°F";
-document.getElementById("humidity").innerHTML=w.humidity+"%";
-document.getElementById("pressure").innerHTML=w.baromrelin+" inHg";
-document.getElementById("wind").innerHTML=w.windspeedmph+" mph";
-document.getElementById("gust").innerHTML=w.windgustmph+" mph";
-document.getElementById("rain").innerHTML=w.dailyrainin+" in";
-
-document.getElementById("arrow").style.transform=`rotate(${w.winddir}deg)`;
-
-document.getElementById("time").innerHTML="Last update: "+new Date(w.date).toLocaleString();
-
+  document.getElementById("temp").innerHTML = w.tempf + "°F";
+  document.getElementById("humidity").innerHTML = w.humidity + "%";
+  document.getElementById("pressure").innerHTML = w.baromrelin + " inHg";
+  document.getElementById("wind").innerHTML = w.windspeedmph + " mph";
+  document.getElementById("gust").innerHTML = w.windgustmph + " mph";
+  document.getElementById("rain").innerHTML = w.dailyrainin + " in";
+  document.getElementById("arrow").style.transform = `rotate(${w.winddir}deg)`;
+  document.getElementById("time").innerHTML = "Last update: " + new Date(w.date).toLocaleString();
 }
 
-async function loadHistory(){
+async function loadHistory() {
+  const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
+  const r = await fetch(url);
+  const history = await r.json();
 
-const url=`https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
+  const temps = [], winds = [], humidity = [], rain = [], times = [];
 
-const r=await fetch(url);
-const history=await r.json();
+  history.reverse().forEach(p => {
+    temps.push(p.tempf);
+    winds.push(p.windspeedmph);
+    humidity.push(p.humidity);
+    rain.push(p.hourlyrainin);
+    times.push(new Date(p.date));
+  });
 
-const temps=[];
-const winds=[];
-const humidity=[];
-const times=[];
-
-history.reverse().forEach(p=>{
-
-temps.push(p.tempf);
-winds.push(p.windspeedmph);
-humidity.push(p.humidity);
-
-times.push(new Date(p.date).toLocaleTimeString());
-
-});
-
-createChart("tempChart","Temperature",temps,times,"orange");
-createChart("windChart","Wind Speed",winds,times,"cyan");
-createChart("humidityChart","Humidity",humidity,times,"lime");
-
+  createChart("tempChart", "Temperature", temps, times, "orange", "°F");
+  createChart("windChart", "Wind Speed", winds, times, "cyan", "mph");
+  createChart("humidityChart", "Humidity", humidity, times, "lime", "%");
+  createChart("rainChart", "Rain", rain, times, "blue", "in");
 }
 
-function createChart(id,label,data,labels,color){
-
-new Chart(document.getElementById(id),{
-
-type:"line",
-
-data:{
-labels:labels,
-datasets:[{
-label:label,
-data:data,
-borderColor:color,
-backgroundColor:"rgba(255,255,255,0.1)",
-tension:.4
-}]
-},
-
-options:{
-responsive:true,
-plugins:{legend:{display:false}},
-scales:{x:{display:false}}
+function createChart(id, label, data, labels, color, unit) {
+  new Chart(document.getElementById(id), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: label,
+        data: data,
+        borderColor: color,
+        backgroundColor: "rgba(255,255,255,0.1)",
+        tension: 0.4,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      plugins: {
+        legend: { display: false },
+        zoom: {
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true },
+            mode: "x"
+          },
+          pan: { enabled: true, mode: "x" }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.dataset.label + ": " + context.formattedValue + " " + unit;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { type: "time", time: { tooltipFormat: "MMM d, h:mm a" } },
+        y: { beginAtZero: false }
+      }
+    }
+  });
 }
 
-});
-
-}
-
+// Initial load
 loadCurrent();
 loadHistory();
 
-setInterval(loadCurrent,60000);
+// Refresh current conditions every 60 seconds
+setInterval(loadCurrent, 60000);
 
 </script>
 
