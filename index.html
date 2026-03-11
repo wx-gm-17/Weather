@@ -23,9 +23,23 @@ html, body {
   font-family: Segoe UI, Arial, sans-serif;
 }
 header { background:#142b44; padding:20px; text-align:center; font-size:28px; border-bottom: 2px solid #1c3d5a; }
-.dashboard { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; padding:15px; overflow-y: auto; max-height: 75vh; }
-.card { background:#1c3d5a; padding:15px 10px; border-radius:12px; text-align:center; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-.card:hover { background:#3a5b7c; }
+
+/* DASHBOARD BACKGROUND FIX (where we add Cannoli's stylized face) */
+.dashboard { 
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; padding:15px; 
+  overflow-y: auto; max-height: 75vh;
+  
+  /* Apply the generated stylized Cannoli image as a faint, repeating watermark */
+  background-image: url('https://replicate.delivery/pbxt/kR4eN0H3G4R8O644Vf8kH69J07R2m1w0W0Q0W0Q0W0Q0W0Q0W0Q0W0Q0/replicate-prediction-r0p644h4g4r8j644n8p4f2f6w2.png');
+  background-size: 100px; /* Small, repeating pattern */
+  background-repeat: repeat;
+  background-attachment: scroll;
+  opacity: 0.1; /* Very faint so it's a subtle design element, not a distraction */
+}
+
+/* Make sure the cards look good on the new background */
+.card { background: rgba(28, 61, 90, 0.9); padding:15px 10px; border-radius:12px; text-align:center; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.1); }
+.card:hover { background: rgba(58, 91, 124, 1); }
 
 .fullscreen-chart {
   display:none; position:fixed; top:0; left:0; width:100%; height:100%;
