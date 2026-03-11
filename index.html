@@ -6,6 +6,7 @@
 <title>Cannoli's Weather Station</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
@@ -25,7 +26,6 @@ header { background:#142b44; padding:20px; text-align:center; font-size:28px; }
   flex-direction:column;
   align-items:center;
   padding-top:10px;
-  touch-action: none; /* Prevents mobile pull-to-refresh */
 }
 
 .chart-container {
@@ -35,14 +35,11 @@ header { background:#142b44; padding:20px; text-align:center; font-size:28px; }
   background: white;
   border-radius: 10px;
   overflow: hidden;
-  cursor: grab; /* Shows user they can pan */
 }
 
-.chart-container:active { cursor: grabbing; }
-
 #fullChart {
-  touch-action: none; 
-  user-select: none;
+  touch-action: none; /* Crucial for Hammer.js */
+  cursor: move;
 }
 
 .fullscreen-toolbar { 
@@ -218,14 +215,12 @@ function renderFullChart(){
         zoom:{
           pan: {
             enabled: true,
-            mode: 'x',
-            modifierKey: null // Allows panning without holding a key
+            mode: 'x'
           },
           zoom: {
             wheel: { enabled: true },
             pinch: { enabled: true },
-            mode: 'x',
-            drag: { enabled: false } // Set to false to allow panning via drag
+            mode: 'x'
           }
         }
       },
