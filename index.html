@@ -33,20 +33,21 @@ canvas { background:white; border-radius:10px; max-width:100%; }
 
 .fullscreen-chart canvas {
   width:95% !important;
-  height:70vh !important; /* smaller height for mobile */
-  touch-action: none;     /* enable pinch/zoom/pan */
+  height:65vh !important;
+  touch-action: none;
   border-radius:10px;
 }
 
-.fullscreen-toolbar { display:flex; justify-content:flex-end; gap:10px; padding:10px; flex-wrap:wrap; }
+.fullscreen-toolbar { display:flex; justify-content:flex-end; gap:10px; padding:10px; flex-wrap:wrap; width:95%; }
 .fullscreen-toolbar button { background:#1c3d5a; color:white; border:none; padding:8px 12px; font-size:16px; border-radius:6px; cursor:pointer; }
 .fullscreen-toolbar button:hover { background:#3a5b7c; }
 .close-chart { background:red; color:white; border:none; padding:10px; font-size:16px; cursor:pointer; border-radius:6px; }
+#chartSubtitle { margin-bottom: 10px; font-size: 14px; color: #aaa; }
 </style>
 </head>
 
 <body>
-<header>🌤 Cannoli's Weather Station</header>
+<header>🐾 Cannoli's Weather Station</header>
 
 <div class="dashboard">
   <div class="card" onclick="openChart('temp')">Temp<br><span id="temp">--</span>°F</div>
@@ -65,6 +66,7 @@ canvas { background:white; border-radius:10px; max-width:100%; }
     <button onclick="resetZoom()">Reset Zoom</button>
     <button class="close-chart" onclick="closeChart()">Close</button>
   </div>
+  <div id="chartSubtitle">Showing history for the last <span id="displayHours">24</span> hours</div>
   <canvas id="fullChart"></canvas>
 </div>
 
@@ -80,7 +82,6 @@ let currentVariable = 'temp';
 let currentInterval = 24;
 let fullChartInstance = null;
 
-// Load live data
 async function loadCurrent() {
   try {
     const url = `https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
@@ -88,19 +89,18 @@ async function loadCurrent() {
     const data = await r.json();
     const w = data[0].lastData;
 
-    document.getElementById("temp").innerHTML = w.tempf;
-    document.getElementById("humidity").innerHTML = w.humidity;
-    document.getElementById("pressure").innerHTML = w.baromrelin;
-    document.getElementById("wind").innerHTML = w.windspeedmph;
-    document.getElementById("gust").innerHTML = w.windgustmph;
-    document.getElementById("rain").innerHTML = w.dailyrainin;
+    document.getElementById("temp").innerHTML = w.tempf || "--";
+    document.getElementById("humidity").innerHTML = w.humidity || "--";
+    document.getElementById("pressure").innerHTML = w.baromrelin || "--";
+    document.getElementById("wind").innerHTML = w.windspeedmph || "0";
+    document.getElementById("gust").innerHTML = w.windgustmph || "0";
+    document.getElementById("rain").innerHTML = w.dailyrainin || "0.00";
     document.getElementById("time").innerHTML = "Last update: " + new Date(w.date).toLocaleString();
   } catch(e){
     console.error("Error loading current data", e);
   }
 }
 
-// Load historical data (only once, handles 429)
 async function loadHistory() {
   try {
     const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
@@ -118,38 +118,35 @@ async function loadHistory() {
     }
 
     allHistory = history.reverse();
+    if(fullChartInstance) renderFullChart();
 
   } catch(e){
     console.error("Error loading history", e);
   }
 }
 
-// Open fullscreen chart
 function openChart(variable){
   currentVariable = variable;
   document.getElementById('fullscreenChartContainer').style.display = 'flex';
   renderFullChart();
 }
 
-// Close fullscreen chart
 function closeChart(){
   document.getElementById('fullscreenChartContainer').style.display = 'none';
   if(fullChartInstance) fullChartInstance.destroy();
   fullChartInstance = null;
 }
 
-// Reset zoom
 function resetZoom(){
   if(fullChartInstance) fullChartInstance.resetZoom();
 }
 
-// Set interval (6,12,24 hours)
 function setIntervalHours(h){
   currentInterval = h;
-  if(fullChartInstance) renderFullChart();
+  document.getElementById('displayHours').innerText = h;
+  renderFullChart();
 }
 
-// Aggregate hourly for large ranges
 function aggregateHourly(data){
   const grouped = {};
   data.forEach(d=>{
@@ -164,36 +161,41 @@ function aggregateHourly(data){
     const arr = grouped[k];
     labels.push(new Date(parseInt(k)));
     const valMap = {
-      temp: arr.reduce((s,v)=>s+v.tempf,0)/arr.length,
-      humidity: arr.reduce((s,v)=>s+v.humidity,0)/arr.length,
-      wind: arr.reduce((s,v)=>s+v.windspeedmph,0)/arr.length,
-      gust: arr.reduce((s,v)=>s+v.windgustmph,0)/arr.length,
-      rain: arr.reduce((s,v)=>s.hourlyrainin,0)
+      temp: arr.reduce((s,v)=>(s + (v.tempf || 0)),0)/arr.length,
+      humidity: arr.reduce((s,v)=>(s + (v.humidity || 0)),0)/arr.length,
+      wind: arr.reduce((s,v)=>(s + (v.windspeedmph || 0)),0)/arr.length,
+      gust: arr.reduce((s,v)=>(s + (v.windgustmph || 0)),0)/arr.length,
+      rain: arr.reduce((s,v)=>(s + (v.hourlyrainin || v.rainhourlyin || 0)),0)
     };
     values.push(valMap[currentVariable]);
   }
   return {labels, values};
 }
 
-// Prepare data for chart
 function getChartData(){
   const now = Date.now();
   const cutoff = now - currentInterval*60*60*1000;
   const filtered = allHistory.filter(d=>new Date(d.date).getTime()>=cutoff);
-  if(currentInterval >=12){
+  
+  if(currentInterval >= 12){
     return aggregateHourly(filtered);
   } else {
     const labels=[], values=[];
     filtered.forEach(d=>{
       labels.push(new Date(d.date));
-      const valMap = { temp: d.tempf, humidity:d.humidity, wind:d.windspeedmph, gust:d.windgustmph, rain:d.hourlyrainin };
+      const valMap = { 
+        temp: d.tempf, 
+        humidity: d.humidity, 
+        wind: d.windspeedmph, 
+        gust: d.windgustmph, 
+        rain: (d.hourlyrainin || d.rainhourlyin || 0) 
+      };
       values.push(valMap[currentVariable]);
     });
     return {labels, values};
   }
 }
 
-// Render fullscreen chart
 function renderFullChart(){
   const data = getChartData();
   const colorMap = {temp:"orange", humidity:"lime", wind:"cyan", gust:"magenta", rain:"blue"};
@@ -201,42 +203,54 @@ function renderFullChart(){
 
   if(fullChartInstance) fullChartInstance.destroy();
   const ctx = document.getElementById('fullChart').getContext('2d');
+  
   fullChartInstance = new Chart(ctx,{
     type:'line',
-    data:{labels:data.labels,datasets:[{label:currentVariable, data:data.values, borderColor:colorMap[currentVariable], backgroundColor:'rgba(255,255,255,0.1)', tension:0.3, pointRadius:0}]},
+    data:{
+      labels:data.labels,
+      datasets:[{
+        label:currentVariable, 
+        data:data.values, 
+        borderColor:colorMap[currentVariable], 
+        backgroundColor:'rgba(255,255,255,0.1)', 
+        tension:0.3, 
+        pointRadius:0
+      }]
+    },
     options:{
       responsive:true,
       maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{display:false, labels:{font:{size:Math.min(window.innerWidth/25,16)}}},
-        tooltip:{bodyFont:{size:Math.min(window.innerWidth/25,14)}, titleFont:{size:Math.min(window.innerWidth/25,16)}, callbacks:{label:ctx=>ctx.dataset.label+": "+ctx.formattedValue+" "+unitMap[currentVariable]}},
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} ${unitMap[currentVariable]}`
+          }
+        },
         zoom:{
-          pan:{enabled:true, mode:'x', scaleMode:'x'},
-          zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x', scaleMode:'x'}
+          pan:{enabled:true, mode:'x'},
+          zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x'}
         }
       },
       scales:{
-        x:{type:'time', time:{tooltipFormat:'MMM d, h:mm a'}, ticks:{font:{size:Math.min(window.innerWidth/28,12)}}},
-        y:{ticks:{font:{size:Math.min(window.innerWidth/28,12)}}}
+        x:{type:'time', time:{tooltipFormat:'MMM d, h:mm a'}},
+        y:{beginAtZero: false}
       }
     }
   });
 }
 
-// Initial load with built-in rate limit delay
+// Initial load with rate limit protection
 async function initializeDashboard() {
   await loadCurrent();
-  
-  // Wait 1.5 seconds (1500 milliseconds) before loading history
-  // to stay well under the 1 request/second limit
   setTimeout(() => {
     loadHistory();
-  }, 1500);
+  }, 1500); 
 }
 
 initializeDashboard();
-setInterval(loadCurrent, 60000); // refresh live data every minute
+setInterval(loadCurrent, 60000); 
 </script>
 
 </body>
