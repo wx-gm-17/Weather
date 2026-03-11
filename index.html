@@ -102,13 +102,25 @@ async function loadCurrent() {
   }
 }
 
-// Load historical data
+// Load historical data (only once, handles 429)
 async function loadHistory() {
   try {
     const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
     const r = await fetch(url);
+
+    if(r.status === 429){
+      console.warn("Too many requests. Historical data not loaded.");
+      return;
+    }
+
     const history = await r.json();
+    if(!Array.isArray(history)){
+      console.error("History data is not an array:", history);
+      return;
+    }
+
     allHistory = history.reverse();
+
   } catch(e){
     console.error("Error loading history", e);
   }
@@ -202,8 +214,8 @@ function renderFullChart(){
         legend:{display:false, labels:{font:{size:Math.min(window.innerWidth/25,16)}}},
         tooltip:{bodyFont:{size:Math.min(window.innerWidth/25,14)}, titleFont:{size:Math.min(window.innerWidth/25,16)}, callbacks:{label:ctx=>ctx.dataset.label+": "+ctx.formattedValue+" "+unitMap[currentVariable]}},
         zoom:{
-          pan:{enabled:true, mode:'x', overScaleMode:'x'},
-          zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x', overScaleMode:'x'}
+          pan:{enabled:true, mode:'x', scaleMode:'x'},
+          zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x', scaleMode:'x'}
         }
       },
       scales:{
@@ -217,7 +229,7 @@ function renderFullChart(){
 // Initial load
 loadCurrent();
 loadHistory();
-setInterval(loadCurrent,60000);
+setInterval(loadCurrent,60000); // refresh live data every minute
 </script>
 
 </body>
