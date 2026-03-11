@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Cannoli's Weather Station</title>
+
+<link rel="apple-touch-icon" href="https://placekitten.com/192/192">
+<link rel="icon" href="https://placekitten.com/192/192">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
@@ -12,81 +17,43 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
 
 <style>
-/* Prevent the phone from scrolling/bouncing while we try to zoom the chart */
 html, body { 
-  margin:0; 
-  padding:0; 
-  background:#0c1b2a; 
-  color:white; 
-  overflow: hidden; 
-  position: fixed; 
-  width: 100%; 
-  height: 100%;
-  overscroll-behavior-y: contain; /* Stops pull-to-refresh */
+  margin:0; padding:0; background:#0c1b2a; color:white; overflow: hidden; 
+  position: fixed; width: 100%; height: 100%; overscroll-behavior-y: contain; 
   font-family: Segoe UI, Arial, sans-serif;
 }
-
-header { background:#142b44; padding:20px; text-align:center; font-size:28px; }
-.dashboard { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; padding:10px; overflow-y: auto; max-height: 80vh; }
-.card { background:#1c3d5a; padding:15px 10px; border-radius:12px; text-align:center; cursor:pointer; }
+header { background:#142b44; padding:20px; text-align:center; font-size:28px; border-bottom: 2px solid #1c3d5a; }
+.dashboard { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; padding:15px; overflow-y: auto; max-height: 75vh; }
+.card { background:#1c3d5a; padding:15px 10px; border-radius:12px; text-align:center; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
 .card:hover { background:#3a5b7c; }
 
 .fullscreen-chart {
-  display:none;
-  position:fixed;
-  top:0; left:0; width:100%; height:100%;
-  background:#0c1b2a; z-index:1000;
-  flex-direction:column;
-  align-items:center;
-  padding-top:10px;
+  display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background:#0c1b2a; z-index:1000; flex-direction:column; align-items:center; padding-top:10px;
 }
-
 .chart-container {
-  position: relative;
-  width: 95%;
-  height: 60vh;
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-  touch-action: none; /* Crucial: tells browser the JS handles all touch */
+  position: relative; width: 95%; height: 60vh; background: white; 
+  border-radius: 15px; overflow: hidden; touch-action: none;
 }
-
-#fullChart {
-  touch-action: none; 
-  cursor: crosshair;
-}
-
-.fullscreen-toolbar { 
-  display:flex; 
-  justify-content:center; 
-  gap:8px; 
-  padding:15px; 
-  flex-wrap:wrap; 
-  width:100%; 
-}
-.fullscreen-toolbar button { 
-  background:#1c3d5a; 
-  color:white; 
-  border:none; 
-  padding:12px 16px; 
-  font-size:14px; 
-  border-radius:8px; 
-}
-.close-chart { background:#d32f2f !important; font-weight: bold; }
+#fullChart { touch-action: none; cursor: crosshair; }
+.fullscreen-toolbar { display:flex; justify-content:center; gap:8px; padding:15px; flex-wrap:wrap; width:100%; }
+.fullscreen-toolbar button { background:#1c3d5a; color:white; border:none; padding:12px 16px; font-size:14px; border-radius:8px; font-weight: bold; }
+.close-chart { background:#d32f2f !important; }
 #chartSubtitle { margin-bottom: 10px; font-size: 14px; color: #aaa; text-align: center; }
+footer { padding:10px; text-align:center; font-size:12px; opacity:0.6; position: absolute; bottom: 10px; width: 100%; }
 </style>
 </head>
 
 <body>
-<header>🐾 Cannoli's Weather Station</header>
+<header>🐾 Cannoli's Station</header>
 
 <div class="dashboard">
   <div class="card" onclick="openChart('temp')">Temp<br><span id="temp">--</span>°F</div>
   <div class="card" onclick="openChart('humidity')">Humidity<br><span id="humidity">--</span>%</div>
   <div class="card" onclick="openChart('pressure')">Pressure<br><span id="pressure">--</span> inHg</div>
-  <div class="card" onclick="openChart('wind')">Wind<br><span id="wind">--</span> mph</div>
-  <div class="card" onclick="openChart('gust')">Gust<br><span id="gust">--</span> mph</div>
-  <div class="card" onclick="openChart('rain')">Rain<br><span id="rain">--</span> in</div>
+  <div class="card" onclick="openChart('wind')">Wind Speed<br><span id="wind">--</span> mph</div>
+  <div class="card" onclick="openChart('gust')">Wind Gust<br><span id="gust">--</span> mph</div>
+  <div class="card" onclick="openChart('rain')">Daily Rain<br><span id="rain">--</span> in</div>
 </div>
 
 <div class="fullscreen-chart" id="fullscreenChartContainer">
@@ -103,10 +70,9 @@ header { background:#142b44; padding:20px; text-align:center; font-size:28px; }
   </div>
 </div>
 
-<footer id="time" style="padding:10px;text-align:center;font-size:12px;opacity:0.7;"></footer>
+<footer id="time">Connecting to Ambient Weather...</footer>
 
 <script>
-// Your Keys
 const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
 const appKey = "b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f";
 const mac = "4C:EB:D6:1E:22:57";
@@ -157,9 +123,7 @@ function closeChart(){
   fullChartInstance = null;
 }
 
-function resetZoom(){
-  if(fullChartInstance) fullChartInstance.resetZoom();
-}
+function resetZoom(){ if(fullChartInstance) fullChartInstance.resetZoom(); }
 
 function setIntervalHours(h){
   currentInterval = h;
@@ -220,19 +184,13 @@ function renderFullChart(){
       }]
     },
     options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      animation: false,
+      responsive:true, maintainAspectRatio:false, animation: false,
       interaction:{mode:'index', intersect:false},
       plugins:{
         legend:{display:false},
         zoom:{
           pan: { enabled: true, mode: 'x' },
-          zoom: {
-            wheel: { enabled: true },
-            pinch: { enabled: true },
-            mode: 'x'
-          }
+          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
         }
       },
       scales:{
