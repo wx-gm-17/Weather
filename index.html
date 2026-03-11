@@ -11,38 +11,56 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
 
 <style>
-body { font-family:Segoe UI, Arial; margin:0; background:#0c1b2a; color:white; }
+body { font-family:Segoe UI, Arial; margin:0; background:#0c1b2a; color:white; overflow-x: hidden; }
 header { background:#142b44; padding:20px; text-align:center; font-size:28px; }
 .dashboard { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; padding:10px; }
-.card { background:#1c3d5a; padding:10px; border-radius:12px; text-align:center; cursor:pointer; }
+.card { background:#1c3d5a; padding:15px 10px; border-radius:12px; text-align:center; cursor:pointer; transition: 0.2s; }
 .card:hover { background:#3a5b7c; }
 .temp { font-size:32px; font-weight:bold; }
-.value { font-size:18px; }
 canvas { background:white; border-radius:10px; max-width:100%; }
 
+/* Fullscreen chart container */
 .fullscreen-chart {
   display:none;
   position:fixed;
   top:0; left:0; width:100%; height:100%;
   background:#0c1b2a; z-index:1000;
   flex-direction:column;
-  justify-content:flex-start;
   align-items:center;
   padding-top:10px;
 }
 
-.fullscreen-chart canvas {
+/* CRITICAL: touch-action none prevents the browser from taking over the touch events */
+#fullChart {
   width:95% !important;
-  height:65vh !important;
-  touch-action: none;
-  border-radius:10px;
+  height:60vh !important;
+  touch-action: none; 
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
-.fullscreen-toolbar { display:flex; justify-content:flex-end; gap:10px; padding:10px; flex-wrap:wrap; width:95%; }
-.fullscreen-toolbar button { background:#1c3d5a; color:white; border:none; padding:8px 12px; font-size:16px; border-radius:6px; cursor:pointer; }
-.fullscreen-toolbar button:hover { background:#3a5b7c; }
-.close-chart { background:red; color:white; border:none; padding:10px; font-size:16px; cursor:pointer; border-radius:6px; }
-#chartSubtitle { margin-bottom: 10px; font-size: 14px; color: #aaa; }
+.fullscreen-toolbar { 
+  display:flex; 
+  justify-content:center; 
+  gap:8px; 
+  padding:15px; 
+  flex-wrap:wrap; 
+  width:100%; 
+}
+.fullscreen-toolbar button { 
+  background:#1c3d5a; 
+  color:white; 
+  border:none; 
+  padding:12px 16px; 
+  font-size:14px; 
+  border-radius:8px; 
+  cursor:pointer; 
+  min-width: 60px;
+}
+.fullscreen-toolbar button:active { background:#4a6b8c; }
+.close-chart { background:#d32f2f !important; font-weight: bold; }
+#chartSubtitle { margin-bottom: 10px; font-size: 14px; color: #aaa; text-align: center; }
 </style>
 </head>
 
@@ -63,14 +81,14 @@ canvas { background:white; border-radius:10px; max-width:100%; }
     <button onclick="setIntervalHours(6)">6h</button>
     <button onclick="setIntervalHours(12)">12h</button>
     <button onclick="setIntervalHours(24)">24h</button>
-    <button onclick="resetZoom()">Reset Zoom</button>
-    <button class="close-chart" onclick="closeChart()">Close</button>
+    <button onclick="resetZoom()">Reset</button>
+    <button class="close-chart" onclick="closeChart()">✕ Close</button>
   </div>
-  <div id="chartSubtitle">Showing history for the last <span id="displayHours">24</span> hours</div>
+  <div id="chartSubtitle">Pinch to Zoom • Drag to Pan<br><small>Showing last <span id="displayHours">24</span> hours</small></div>
   <canvas id="fullChart"></canvas>
 </div>
 
-<footer id="time" style="padding:10px;text-align:center;"></footer>
+<footer id="time" style="padding:20px;text-align:center;font-size:12px;opacity:0.7;"></footer>
 
 <script>
 const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
@@ -96,33 +114,20 @@ async function loadCurrent() {
     document.getElementById("gust").innerHTML = w.windgustmph || "0";
     document.getElementById("rain").innerHTML = w.dailyrainin || "0.00";
     document.getElementById("time").innerHTML = "Last update: " + new Date(w.date).toLocaleString();
-  } catch(e){
-    console.error("Error loading current data", e);
-  }
+  } catch(e){ console.error(e); }
 }
 
 async function loadHistory() {
   try {
     const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
     const r = await fetch(url);
-
-    if(r.status === 429){
-      console.warn("Too many requests. Historical data not loaded.");
-      return;
-    }
-
+    if(r.status === 429) return;
     const history = await r.json();
-    if(!Array.isArray(history)){
-      console.error("History data is not an array:", history);
-      return;
+    if(Array.isArray(history)) {
+        allHistory = history.reverse();
+        if(fullChartInstance) renderFullChart();
     }
-
-    allHistory = history.reverse();
-    if(fullChartInstance) renderFullChart();
-
-  } catch(e){
-    console.error("Error loading history", e);
-  }
+  } catch(e){ console.error(e); }
 }
 
 function openChart(variable){
@@ -173,32 +178,21 @@ function aggregateHourly(data){
 }
 
 function getChartData(){
-  const now = Date.now();
-  const cutoff = now - currentInterval*60*60*1000;
+  const cutoff = Date.now() - currentInterval*60*60*1000;
   const filtered = allHistory.filter(d=>new Date(d.date).getTime()>=cutoff);
-  
-  if(currentInterval >= 12){
-    return aggregateHourly(filtered);
-  } else {
-    const labels=[], values=[];
-    filtered.forEach(d=>{
-      labels.push(new Date(d.date));
-      const valMap = { 
-        temp: d.tempf, 
-        humidity: d.humidity, 
-        wind: d.windspeedmph, 
-        gust: d.windgustmph, 
-        rain: (d.hourlyrainin || d.rainhourlyin || 0) 
-      };
-      values.push(valMap[currentVariable]);
-    });
-    return {labels, values};
-  }
+  if(currentInterval >= 12) return aggregateHourly(filtered);
+  const labels=[], values=[];
+  filtered.forEach(d=>{
+    labels.push(new Date(d.date));
+    const valMap = { temp: d.tempf, humidity: d.humidity, wind: d.windspeedmph, gust: d.windgustmph, rain: (d.hourlyrainin || d.rainhourlyin || 0) };
+    values.push(valMap[currentVariable]);
+  });
+  return {labels, values};
 }
 
 function renderFullChart(){
   const data = getChartData();
-  const colorMap = {temp:"orange", humidity:"lime", wind:"cyan", gust:"magenta", rain:"blue"};
+  const colorMap = {temp:"orange", humidity:"lime", wind:"cyan", gust:"magenta", rain:"#3498db"};
   const unitMap = {temp:"°F", humidity:"%", wind:"mph", gust:"mph", rain:"in"};
 
   if(fullChartInstance) fullChartInstance.destroy();
@@ -212,41 +206,51 @@ function renderFullChart(){
         label:currentVariable, 
         data:data.values, 
         borderColor:colorMap[currentVariable], 
-        backgroundColor:'rgba(255,255,255,0.1)', 
+        backgroundColor:'rgba(255,255,255,0.05)', 
         tension:0.3, 
-        pointRadius:0
+        pointRadius:0,
+        fill: true
       }]
     },
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      interaction:{mode:'index',intersect:false},
+      animation: false, // Disabling animation makes zooming feel snappier on mobile
+      interaction:{mode:'index', intersect:false},
       plugins:{
         legend:{display:false},
-        tooltip:{
-          callbacks:{
-            label: (context) => `${context.dataset.label}: ${context.parsed.y.toFixed(2)} ${unitMap[currentVariable]}`
-          }
-        },
         zoom:{
-          pan:{enabled:true, mode:'x'},
-          zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x'}
+          pan: {
+            enabled: true,
+            mode: 'x',
+            threshold: 5 // Helps distinguish between a tap and a drag
+          },
+          zoom: {
+            wheel: { enabled: true },
+            pinch: { enabled: true }, // Crucial for mobile
+            mode: 'x'
+          }
         }
       },
       scales:{
-        x:{type:'time', time:{tooltipFormat:'MMM d, h:mm a'}},
-        y:{beginAtZero: false}
+        x:{ 
+            type:'time', 
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: 'white' }
+        },
+        y:{ 
+            beginAtZero: false, 
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: 'white' }
+        }
       }
     }
   });
 }
 
-// Initial load with rate limit protection
 async function initializeDashboard() {
   await loadCurrent();
-  setTimeout(() => {
-    loadHistory();
-  }, 1500); 
+  setTimeout(loadHistory, 1500); 
 }
 
 initializeDashboard();
