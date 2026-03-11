@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Cannoli's Weather Station</title>
 
 <!-- Chart.js + zoom plugin + luxon adapter -->
@@ -21,8 +21,8 @@ header { background:#142b44; padding:20px; text-align:center; font-size:28px; }
 .value { font-size:18px; }
 canvas { background:white; border-radius:10px; max-width:100%; }
 .fullscreen-chart { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#0c1b2a; z-index:1000; flex-direction:column; }
-.fullscreen-chart canvas { flex:1; margin:10px; }
-.fullscreen-toolbar { display:flex; justify-content:flex-end; gap:10px; padding:10px; }
+.fullscreen-chart canvas { flex:1; width:100% !important; height:100% !important; margin:0; }
+.fullscreen-toolbar { display:flex; justify-content:flex-end; gap:10px; padding:10px; flex-wrap:wrap; }
 .fullscreen-toolbar button { background:#1c3d5a; color:white; border:none; padding:8px 12px; font-size:16px; border-radius:6px; cursor:pointer; }
 .fullscreen-toolbar button:hover { background:#3a5b7c; }
 .close-chart { background:red; color:white; border:none; padding:10px; font-size:16px; cursor:pointer; border-radius:6px; }
@@ -67,26 +67,34 @@ let fullChartInstance = null;
 
 // Load live data
 async function loadCurrent() {
-  const url = `https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
-  const r = await fetch(url);
-  const data = await r.json();
-  const w = data[0].lastData;
+  try {
+    const url = `https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
+    const r = await fetch(url);
+    const data = await r.json();
+    const w = data[0].lastData;
 
-  document.getElementById("temp").innerHTML = w.tempf;
-  document.getElementById("humidity").innerHTML = w.humidity;
-  document.getElementById("pressure").innerHTML = w.baromrelin;
-  document.getElementById("wind").innerHTML = w.windspeedmph;
-  document.getElementById("gust").innerHTML = w.windgustmph;
-  document.getElementById("rain").innerHTML = w.dailyrainin;
-  document.getElementById("time").innerHTML = "Last update: " + new Date(w.date).toLocaleString();
+    document.getElementById("temp").innerHTML = w.tempf;
+    document.getElementById("humidity").innerHTML = w.humidity;
+    document.getElementById("pressure").innerHTML = w.baromrelin;
+    document.getElementById("wind").innerHTML = w.windspeedmph;
+    document.getElementById("gust").innerHTML = w.windgustmph;
+    document.getElementById("rain").innerHTML = w.dailyrainin;
+    document.getElementById("time").innerHTML = "Last update: " + new Date(w.date).toLocaleString();
+  } catch(e){
+    console.error("Error loading current data", e);
+  }
 }
 
 // Load historical data
 async function loadHistory() {
-  const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
-  const r = await fetch(url);
-  const history = await r.json();
-  allHistory = history.reverse();
+  try {
+    const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
+    const r = await fetch(url);
+    const history = await r.json();
+    allHistory = history.reverse();
+  } catch(e){
+    console.error("Error loading history", e);
+  }
 }
 
 // Open fullscreen chart
@@ -171,16 +179,17 @@ function renderFullChart(){
     data:{labels:data.labels,datasets:[{label:currentVariable, data:data.values, borderColor:colorMap[currentVariable], backgroundColor:'rgba(255,255,255,0.1)', tension:0.3, pointRadius:0}]},
     options:{
       responsive:true,
+      maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
-        legend:{display:false},
-        zoom:{
-          pan:{enabled:true,mode:'x'},
-          zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'}
-        },
-        tooltip:{callbacks:{label:ctx=>ctx.dataset.label+": "+ctx.formattedValue+" "+unitMap[currentVariable]}}
+        legend:{display:false, labels:{font:{size:Math.min(window.innerWidth/25,16)}}},
+        tooltip:{bodyFont:{size:Math.min(window.innerWidth/25,14)}, titleFont:{size:Math.min(window.innerWidth/25,16)}, callbacks:{label:ctx=>ctx.dataset.label+": "+ctx.formattedValue+" "+unitMap[currentVariable]}},
+        zoom:{pan:{enabled:true,mode:'x'}, zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x'}}
       },
-      scales:{x:{type:'time',time:{tooltipFormat:'MMM d, h:mm a'}},y:{beginAtZero:false}}
+      scales:{
+        x:{type:'time', time:{tooltipFormat:'MMM d, h:mm a'}, ticks:{font:{size:Math.min(window.innerWidth/28,12)}}},
+        y:{ticks:{font:{size:Math.min(window.innerWidth/28,12)}}}
+      }
     }
   });
 }
