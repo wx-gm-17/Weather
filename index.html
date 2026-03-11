@@ -20,8 +20,25 @@ header { background:#142b44; padding:20px; text-align:center; font-size:28px; }
 .temp { font-size:32px; font-weight:bold; }
 .value { font-size:18px; }
 canvas { background:white; border-radius:10px; max-width:100%; }
-.fullscreen-chart { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#0c1b2a; z-index:1000; flex-direction:column; }
-.fullscreen-chart canvas { flex:1; width:100% !important; height:100% !important; margin:0; }
+
+.fullscreen-chart {
+  display:none;
+  position:fixed;
+  top:0; left:0; width:100%; height:100%;
+  background:#0c1b2a; z-index:1000;
+  flex-direction:column;
+  justify-content:flex-start;
+  align-items:center;
+  padding-top:10px;
+}
+
+.fullscreen-chart canvas {
+  width:95% !important;
+  height:70vh !important; /* smaller height for mobile */
+  touch-action: none;     /* enable pinch/zoom/pan */
+  border-radius:10px;
+}
+
 .fullscreen-toolbar { display:flex; justify-content:flex-end; gap:10px; padding:10px; flex-wrap:wrap; }
 .fullscreen-toolbar button { background:#1c3d5a; color:white; border:none; padding:8px 12px; font-size:16px; border-radius:6px; cursor:pointer; }
 .fullscreen-toolbar button:hover { background:#3a5b7c; }
@@ -141,7 +158,7 @@ function aggregateHourly(data){
       humidity: arr.reduce((s,v)=>s+v.humidity,0)/arr.length,
       wind: arr.reduce((s,v)=>s+v.windspeedmph,0)/arr.length,
       gust: arr.reduce((s,v)=>s+v.windgustmph,0)/arr.length,
-      rain: arr.reduce((s,v)=>s+v.hourlyrainin,0)
+      rain: arr.reduce((s,v)=>s.hourlyrainin,0)
     };
     values.push(valMap[currentVariable]);
   }
@@ -184,7 +201,10 @@ function renderFullChart(){
       plugins:{
         legend:{display:false, labels:{font:{size:Math.min(window.innerWidth/25,16)}}},
         tooltip:{bodyFont:{size:Math.min(window.innerWidth/25,14)}, titleFont:{size:Math.min(window.innerWidth/25,16)}, callbacks:{label:ctx=>ctx.dataset.label+": "+ctx.formattedValue+" "+unitMap[currentVariable]}},
-        zoom:{pan:{enabled:true,mode:'x'}, zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x'}}
+        zoom:{
+          pan:{enabled:true, mode:'x', overScaleMode:'x'},
+          zoom:{wheel:{enabled:true}, pinch:{enabled:true}, mode:'x', overScaleMode:'x'}
+        }
       },
       scales:{
         x:{type:'time', time:{tooltipFormat:'MMM d, h:mm a'}, ticks:{font:{size:Math.min(window.innerWidth/28,12)}}},
