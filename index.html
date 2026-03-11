@@ -147,6 +147,11 @@ const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5
 const appKey = "b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f";
 const mac = "4C:EB:D6:1E:22:57";
 
+let allHistory = [];
+let currentInterval = 24;
+let charts = {};
+
+// Load current live conditions
 async function loadCurrent() {
   const url = `https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
   const r = await fetch(url);
@@ -163,80 +168,109 @@ async function loadCurrent() {
   document.getElementById("time").innerHTML = "Last update: " + new Date(w.date).toLocaleString();
 }
 
+// Load historical data
 async function loadHistory() {
   const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
   const r = await fetch(url);
   const history = await r.json();
 
-  const temps = [], winds = [], humidity = [], rain = [], times = [];
-
-  history.reverse().forEach(p => {
-    temps.push(p.tempf);
-    winds.push(p.windspeedmph);
-    humidity.push(p.humidity);
-    rain.push(p.hourlyrainin);
-    times.push(new Date(p.date));
-  });
-
-  createChart("tempChart", "Temperature", temps, times, "orange", "°F");
-  createChart("windChart", "Wind Speed", winds, times, "cyan", "mph");
-  createChart("humidityChart", "Humidity", humidity, times, "lime", "%");
-  createChart("rainChart", "Rain", rain, times, "blue", "in");
+  allHistory = history.reverse();
+  updateCharts();
 }
 
-function createChart(id, label, data, labels, color, unit) {
-  new Chart(document.getElementById(id), {
-    type: "line",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: label,
-        data: data,
-        borderColor: color,
-        backgroundColor: "rgba(255,255,255,0.1)",
-        tension: 0.4,
-        pointRadius: 0
-      }]
-    },
-    options: {
-      responsive: true,
-      interaction: {
-        mode: "index",
-        intersect: false
-      },
-      plugins: {
-        legend: { display: false },
-        zoom: {
-          zoom: {
-            wheel: { enabled: true },
-            pinch: { enabled: true },
-            mode: "x"
+// Group data by hour (average values)
+function aggregateHourly(data){
+  const grouped = {};
+  data.forEach(d=>{
+    const hour = new Date(d.date);
+    hour.setMinutes(0,0,0); // truncate to hour
+    const key = hour.getTime();
+    if(!grouped[key]) grouped[key]=[];
+    grouped[key].push(d);
+  });
+  const labels=[], temp=[], wind=[], humidity=[], rain=[];
+  for(const k of Object.keys(grouped).sort((a,b)=>a-b)){
+    const arr = grouped[k];
+    labels.push(new Date(parseInt(k)));
+    temp.push(arr.reduce((s,v)=>s+v.tempf,0)/arr.length);
+    wind.push(arr.reduce((s,v)=>s+v.windspeedmph,0)/arr.length);
+    humidity.push(arr.reduce((s,v)=>s+v.humidity,0)/arr.length);
+    rain.push(arr.reduce((s,v)=>s+v.hourlyrainin,0));
+  }
+  return {labels,temp,wind,humidity,rain};
+}
+
+// Filter data by interval and aggregate if needed
+function getProcessedData(){
+  const now = Date.now();
+  const cutoff = now - currentInterval*60*60*1000;
+  const filtered = allHistory.filter(d=>new Date(d.date).getTime() >= cutoff);
+
+  // Aggregate if interval >=12h for clarity
+  if(currentInterval>=12){
+    return aggregateHourly(filtered);
+  } else {
+    const labels=[], temp=[], wind=[], humidity=[], rain=[];
+    filtered.forEach(d=>{
+      labels.push(new Date(d.date));
+      temp.push(d.tempf);
+      wind.push(d.windspeedmph);
+      humidity.push(d.humidity);
+      rain.push(d.hourlyrainin);
+    });
+    return {labels,temp,wind,humidity,rain};
+  }
+}
+
+// Create or update chart
+function updateCharts(){
+  const data = getProcessedData();
+  createChart("tempChart","Temperature",data.temp,data.labels,"orange","°F");
+  createChart("windChart","Wind Speed",data.wind,data.labels,"cyan","mph");
+  createChart("humidityChart","Humidity",data.humidity,data.labels,"lime","%");
+  createChart("rainChart","Rain",data.rain,data.labels,"blue","in");
+}
+
+// Chart creation function
+function createChart(id,label,data,labels,color,unit){
+  if(charts[id]){
+    charts[id].data.labels = labels;
+    charts[id].data.datasets[0].data = data;
+    charts[id].update();
+  } else {
+    charts[id] = new Chart(document.getElementById(id),{
+      type:"line",
+      data:{labels:labels,datasets:[{label,label,data,borderColor:color,backgroundColor:"rgba(255,255,255,0.1)",tension:0.4,pointRadius:0}]},
+      options:{
+        responsive:true,
+        interaction:{mode:"index",intersect:false},
+        plugins:{
+          legend:{display:false},
+          zoom:{
+            zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"x"},
+            pan:{enabled:true,mode:"x"}
           },
-          pan: { enabled: true, mode: "x" }
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context) {
-              return context.dataset.label + ": " + context.formattedValue + " " + unit;
-            }
+          tooltip:{
+            callbacks:{label:ctx=>ctx.dataset.label+": "+ctx.formattedValue+" "+unit}
           }
+        },
+        scales:{
+          x:{type:"time",time:{tooltipFormat:"MMM d, h:mm a"}},
+          y:{beginAtZero:false}
         }
-      },
-      scales: {
-        x: { type: "time", time: { tooltipFormat: "MMM d, h:mm a" } },
-        y: { beginAtZero: false }
       }
-    }
-  });
+    });
+  }
 }
+
+// Control panel functions
+function resetZoom(){Object.values(charts).forEach(c=>c.resetZoom());}
+function setIntervalHours(h){currentInterval=h;updateCharts();}
 
 // Initial load
 loadCurrent();
 loadHistory();
-
-// Refresh current conditions every 60 seconds
-setInterval(loadCurrent, 60000);
-
+setInterval(loadCurrent,60000);
 </script>
 
 </body>
