@@ -3,9 +3,10 @@
 
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cannoli's Weather Station</title>
 
-<!-- Chart.js + zoom plugin -->
+<!-- Chart.js + zoom plugin + luxon adapter -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
@@ -20,59 +21,81 @@ body {
 }
 header {
   background:#142b44;
-  padding:25px;
+  padding:20px;
   text-align:center;
-  font-size:32px;
+  font-size:28px;
 }
 .dashboard {
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:20px;
-  padding:20px;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:15px;
+  padding:15px;
 }
 .card {
   background:#1c3d5a;
-  padding:20px;
+  padding:15px;
   border-radius:12px;
   text-align:center;
 }
 .temp {
-  font-size:70px;
+  font-size:50px;
   font-weight:bold;
 }
 .value {
-  font-size:28px;
+  font-size:22px;
 }
 canvas {
   background:white;
   border-radius:10px;
+  max-width:100%;
 }
 .graph {
-  padding:20px;
+  padding:15px;
 }
 .windCompass {
-  width:120px;
-  height:120px;
-  border:5px solid white;
+  width:100px;
+  height:100px;
+  border:4px solid white;
   border-radius:50%;
   margin:auto;
   position:relative;
 }
 .arrow {
   width:4px;
-  height:50px;
+  height:40px;
   background:red;
   position:absolute;
-  top:15px;
+  top:10px;
   left:50%;
   transform-origin:bottom center;
 }
 footer {
   text-align:center;
-  padding:20px;
+  padding:15px;
   opacity:.7;
 }
+.controls {
+  background:#142b44;
+  padding:10px;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.controls button {
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  background:#1c3d5a;
+  color:white;
+  cursor:pointer;
+  font-size:14px;
+}
+.controls button:hover {
+  background:#3a5b7c;
+}
 </style>
+
 </head>
 
 <body>
@@ -86,32 +109,26 @@ footer {
     Temperature
     <div class="temp" id="temp">--</div>
   </div>
-
   <div class="card">
     Humidity
     <div class="value" id="humidity">--</div>
   </div>
-
   <div class="card">
     Pressure
     <div class="value" id="pressure">--</div>
   </div>
-
   <div class="card">
     Wind Speed
     <div class="value" id="wind">--</div>
   </div>
-
   <div class="card">
     Wind Gust
     <div class="value" id="gust">--</div>
   </div>
-
   <div class="card">
     Rain Today
     <div class="value" id="rain">--</div>
   </div>
-
   <div class="card">
     Wind Direction
     <div class="windCompass">
@@ -120,23 +137,30 @@ footer {
   </div>
 </div>
 
+<div class="controls">
+  <button onclick="resetZoom()">Reset Zoom</button>
+  <button onclick="setIntervalHours(6)">Last 6h</button>
+  <button onclick="setIntervalHours(12)">Last 12h</button>
+  <button onclick="setIntervalHours(24)">Last 24h</button>
+</div>
+
 <div class="graph">
-  <h2 style="text-align:center;">Temperature (24h)</h2>
+  <h3 style="text-align:center;">Temperature</h3>
   <canvas id="tempChart"></canvas>
 </div>
 
 <div class="graph">
-  <h2 style="text-align:center;">Wind Speed (24h)</h2>
+  <h3 style="text-align:center;">Wind Speed</h3>
   <canvas id="windChart"></canvas>
 </div>
 
 <div class="graph">
-  <h2 style="text-align:center;">Humidity (24h)</h2>
+  <h3 style="text-align:center;">Humidity</h3>
   <canvas id="humidityChart"></canvas>
 </div>
 
 <div class="graph">
-  <h2 style="text-align:center;">Rain (24h)</h2>
+  <h3 style="text-align:center;">Rain</h3>
   <canvas id="rainChart"></canvas>
 </div>
 
@@ -147,11 +171,11 @@ const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5
 const appKey = "b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f";
 const mac = "4C:EB:D6:1E:22:57";
 
-let allHistory = [];
-let currentInterval = 24;
+let allHistory = []; // store 288 records
+let currentInterval = 24; // default last 24h
+
 let charts = {};
 
-// Load current live conditions
 async function loadCurrent() {
   const url = `https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
   const r = await fetch(url);
@@ -168,70 +192,42 @@ async function loadCurrent() {
   document.getElementById("time").innerHTML = "Last update: " + new Date(w.date).toLocaleString();
 }
 
-// Load historical data
 async function loadHistory() {
   const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
   const r = await fetch(url);
   const history = await r.json();
 
+  // store full history for interval filtering
   allHistory = history.reverse();
   updateCharts();
 }
 
-// Group data by hour (average values)
-function aggregateHourly(data){
-  const grouped = {};
-  data.forEach(d=>{
-    const hour = new Date(d.date);
-    hour.setMinutes(0,0,0); // truncate to hour
-    const key = hour.getTime();
-    if(!grouped[key]) grouped[key]=[];
-    grouped[key].push(d);
-  });
-  const labels=[], temp=[], wind=[], humidity=[], rain=[];
-  for(const k of Object.keys(grouped).sort((a,b)=>a-b)){
-    const arr = grouped[k];
-    labels.push(new Date(parseInt(k)));
-    temp.push(arr.reduce((s,v)=>s+v.tempf,0)/arr.length);
-    wind.push(arr.reduce((s,v)=>s+v.windspeedmph,0)/arr.length);
-    humidity.push(arr.reduce((s,v)=>s+v.humidity,0)/arr.length);
-    rain.push(arr.reduce((s,v)=>s+v.hourlyrainin,0));
-  }
-  return {labels,temp,wind,humidity,rain};
-}
-
-// Filter data by interval and aggregate if needed
-function getProcessedData(){
+// filter data by hours
+function getFilteredData(hours) {
   const now = Date.now();
-  const cutoff = now - currentInterval*60*60*1000;
-  const filtered = allHistory.filter(d=>new Date(d.date).getTime() >= cutoff);
-
-  // Aggregate if interval >=12h for clarity
-  if(currentInterval>=12){
-    return aggregateHourly(filtered);
-  } else {
-    const labels=[], temp=[], wind=[], humidity=[], rain=[];
-    filtered.forEach(d=>{
-      labels.push(new Date(d.date));
-      temp.push(d.tempf);
-      wind.push(d.windspeedmph);
-      humidity.push(d.humidity);
-      rain.push(d.hourlyrainin);
-    });
-    return {labels,temp,wind,humidity,rain};
-  }
+  const cutoff = now - hours*60*60*1000;
+  return allHistory.filter(d => new Date(d.date).getTime() >= cutoff);
 }
 
-// Create or update chart
-function updateCharts(){
-  const data = getProcessedData();
-  createChart("tempChart","Temperature",data.temp,data.labels,"orange","°F");
-  createChart("windChart","Wind Speed",data.wind,data.labels,"cyan","mph");
-  createChart("humidityChart","Humidity",data.humidity,data.labels,"lime","%");
-  createChart("rainChart","Rain",data.rain,data.labels,"blue","in");
+function updateCharts() {
+  const filtered = getFilteredData(currentInterval);
+  const temps=[], winds=[], humidity=[], rain=[], times=[];
+
+  filtered.forEach(p => {
+    temps.push(p.tempf);
+    winds.push(p.windspeedmph);
+    humidity.push(p.humidity);
+    rain.push(p.hourlyrainin);
+    times.push(new Date(p.date));
+  });
+
+  createChart("tempChart","Temperature",temps,times,"orange","°F");
+  createChart("windChart","Wind Speed",winds,times,"cyan","mph");
+  createChart("humidityChart","Humidity",humidity,times,"lime","%");
+  createChart("rainChart","Rain",rain,times,"blue","in");
 }
 
-// Chart creation function
+// create chart if doesn't exist, else update data
 function createChart(id,label,data,labels,color,unit){
   if(charts[id]){
     charts[id].data.labels = labels;
@@ -251,7 +247,9 @@ function createChart(id,label,data,labels,color,unit){
             pan:{enabled:true,mode:"x"}
           },
           tooltip:{
-            callbacks:{label:ctx=>ctx.dataset.label+": "+ctx.formattedValue+" "+unit}
+            callbacks:{
+              label:function(context){return context.dataset.label+": "+context.formattedValue+" "+unit;}
+            }
           }
         },
         scales:{
@@ -263,14 +261,20 @@ function createChart(id,label,data,labels,color,unit){
   }
 }
 
-// Control panel functions
-function resetZoom(){Object.values(charts).forEach(c=>c.resetZoom());}
-function setIntervalHours(h){currentInterval=h;updateCharts();}
+// control panel functions
+function resetZoom(){
+  Object.values(charts).forEach(c=>c.resetZoom());
+}
 
-// Initial load
+function setIntervalHours(h){
+  currentInterval = h;
+  updateCharts();
+}
+
+// initial load
 loadCurrent();
 loadHistory();
-setInterval(loadCurrent,60000);
+setInterval(loadCurrent,60000); // refresh live data every 60s
 </script>
 
 </body>
