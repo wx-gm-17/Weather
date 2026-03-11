@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#060d14">
-<title>Cannoli Pro v8</title>
+<title>Cannoli Pro v9</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
@@ -24,99 +24,103 @@
 body { margin:0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
 
 header { 
-  background: #0b141d; padding: 20px; display: flex; justify-content: space-between; 
+  background: #0b141d; padding: 25px; display: flex; justify-content: space-between; 
   align-items: center; border-bottom: 2px solid var(--border);
 }
 
-.paw { font-size: 32px; vertical-align: middle; }
-.btn { background: var(--accent); border: none; color: #000; padding: 12px 18px; border-radius: 8px; font-weight: 900; cursor: pointer; }
-.btn-secondary { background: #1c3d5a; color: white; margin-right: 10px; }
+.paw { font-size: 48px; vertical-align: middle; margin-right: 10px; }
+.btn { background: var(--accent); border: none; color: #000; padding: 14px 22px; border-radius: 10px; font-weight: 900; cursor: pointer; font-size: 16px; }
+.btn-secondary { background: #1c3d5a; color: white; margin-right: 12px; }
 
-.dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; padding: 20px; }
+.dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 25px; }
 
 .card { 
-  background: var(--card); padding: 30px 15px; border-radius: 20px; text-align: center; 
-  border: 1px solid var(--border); box-shadow: 0 8px 30px rgba(0,0,0,0.5); cursor: pointer;
+  background: var(--card); padding: 45px 20px; border-radius: 28px; text-align: center; 
+  border: 2px solid var(--border); box-shadow: 0 15px 45px rgba(0,0,0,0.6); cursor: pointer;
 }
 
-.label { font-size: 14px; text-transform: uppercase; color: #8899a6; font-weight: 900; letter-spacing: 1px; }
-.main-val { font-size: 64px; font-weight: 900; margin: 10px 0; color: #fff; }
-.sub-val { font-size: 14px; color: var(--accent); font-weight: 700; }
+.label { font-size: 18px; text-transform: uppercase; color: #8899a6; font-weight: 900; letter-spacing: 2px; }
+.main-val { font-size: 84px; font-weight: 900; margin: 15px 0; color: #fff; line-height: 1; }
+.sub-val { font-size: 20px; color: var(--accent); font-weight: 700; }
 
-/* Summary Table Section */
-.summary-container { margin: 0 20px 30px 20px; background: #0b141d; border-radius: 15px; border: 1px solid var(--border); overflow: hidden; }
-.summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.summary-table th { background: #14212d; color: #8899a6; padding: 12px; text-align: left; font-weight: 900; border-bottom: 1px solid var(--border); }
-.summary-table td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+/* Summary & Overlays */
+.summary-container { margin: 0 25px 40px 25px; background: #0b141d; border-radius: 20px; border: 2px solid var(--border); overflow: hidden; }
+.summary-table { width: 100%; border-collapse: collapse; font-size: 18px; }
+.summary-table th { background: #14212d; color: var(--accent); padding: 15px; text-align: left; font-weight: 900; border-bottom: 2px solid var(--border); }
+.summary-table td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
-/* Overlays */
 .overlay-view { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; flex-direction:column; }
-.toolbar { display:flex; gap:10px; padding:15px; background: #0b141d; align-items: center; border-bottom: 1px solid var(--border); }
-.content-area { flex: 1; overflow-y: auto; padding: 15px; }
-.chart-container { height: 50vh; background: #0b141d; border-radius: 12px; border: 1px solid var(--border); padding: 10px; touch-action: none; position: relative; }
+.toolbar { display:flex; gap:12px; padding:20px; background: #0b141d; align-items: center; border-bottom: 2px solid var(--border); }
+.content-area { flex: 1; overflow-y: auto; padding: 20px; }
+.chart-container { height: 55vh; background: #000; border-radius: 16px; border: 1px solid var(--border); padding: 10px; touch-action: none; position: relative; }
 
-/* Master Table Styling */
-.table-wrapper { border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
-table { width: 100%; border-collapse: collapse; font-size: 11px; white-space: nowrap; }
-table th { background: #1c3d5a; padding: 8px 4px; color: var(--accent); text-align: center; width: 1%; }
-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); text-align: center; width: 1%; }
+/* Large Data Tables */
+.table-wrapper { border-radius: 12px; border: 2px solid var(--border); overflow-x: auto; background: #0b141d; }
+table { width: 100%; border-collapse: collapse; font-size: 16px; font-weight: 600; }
+table th { background: #1c3d5a; padding: 12px 10px; color: var(--accent); text-align: center; border-bottom: 2px solid var(--border); }
+table td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: center; }
 
-footer { padding: 20px; text-align: center; font-size: 12px; color: #556677; }
+footer { padding: 30px; text-align: center; font-size: 14px; color: #556677; font-weight: 800; }
 </style>
 </head>
 <body>
 
 <header>
-  <div><span class="paw">🐾</span> <span style="letter-spacing: 2px; font-weight: 900;">CANNOLI PRO</span></div>
-  <div>
+  <div><span class="paw">🐾</span><span style="letter-spacing: 4px; font-weight: 900; font-size: 24px;">CANNOLI PRO</span></div>
+  <div style="display: flex;">
     <button class="btn btn-secondary" onclick="openMasterTable()">MASTER LOG</button>
     <button class="btn" onclick="location.reload()">REFRESH</button>
   </div>
 </header>
 
 <div class="dashboard">
-  <div class="card" onclick="openChart('temp')"><div class="label">Temp / Dew</div><div id="temp" class="main-val">--</div><div id="dew-sub" class="sub-val">Dew: --</div></div>
+  <div class="card" onclick="openChart('temp')"><div class="label">Temperature</div><div id="temp" class="main-val">--</div><div id="temp-sub" class="sub-val">H: -- L: --</div></div>
+  <div class="card" onclick="openChart('humidity')"><div class="label">Humidity / Dew</div><div id="humidity" class="main-val">--</div><div id="dew-sub" class="sub-val">Dew: --</div></div>
   <div class="card" onclick="openChart('wind')"><div class="label">Wind / Gust</div><div id="wind" class="main-val">--</div><div id="gust-sub" class="sub-val">Gust: -- | Dir: --</div></div>
   <div class="card" onclick="openChart('solar')"><div class="label">Solar / UV</div><div id="solar" class="main-val">--</div><div id="uv-sub" class="sub-val">UV Index: --</div></div>
-  <div class="card" onclick="openChart('rain')"><div class="label">Rainfall</div><div id="rain" class="main-val">--</div><div class="sub-val">DAILY TOTAL</div></div>
+  <div class="card" onclick="openChart('rain')"><div class="label">Rainfall</div><div id="rain" class="main-val">--</div><div class="sub-val">DAILY TOTAL (IN)</div></div>
   <div class="card" onclick="openChart('pressure')"><div class="label">Pressure</div><div id="pressure" class="main-val">--</div><div class="sub-val">hPa</div></div>
 </div>
 
 <div class="summary-container">
   <table class="summary-table">
-    <thead><tr><th>Metric</th><th>High</th><th>Low</th><th>Avg</th></tr></thead>
+    <thead><tr><th>24H Summary</th><th>High</th><th>Low</th><th>Average</th></tr></thead>
     <tbody id="summaryBody">
       <tr><td>Temperature</td><td id="s-th">-</td><td id="s-tl">-</td><td id="s-ta">-</td></tr>
       <tr><td>Wind Speed</td><td id="s-wh">-</td><td id="s-wl">-</td><td id="s-wa">-</td></tr>
+      <tr><td>Solar Rad</td><td id="s-sh">-</td><td id="s-sl">-</td><td id="s-sa">-</td></tr>
     </tbody>
   </table>
 </div>
 
 <div class="overlay-view" id="overlay">
   <div class="toolbar">
-    <h2 id="graphTitle" style="flex-grow:1; margin:0; font-size:16px;">Details</h2>
+    <h2 id="graphTitle" style="flex-grow:1; margin:0; font-size:22px;">Details</h2>
     <button class="btn btn-secondary" onclick="fullChartInstance.resetZoom()">RESET</button>
-    <button class="btn btn-secondary" onclick="toggleTable()" id="toggleBtn">TABLE</button>
+    <button class="btn btn-secondary" onclick="toggleTable()" id="toggleBtn">SHOW TABLE</button>
     <button class="btn" onclick="closeOverlay()" style="background:#ff4d4d;">✕</button>
   </div>
   <div class="content-area">
     <div class="chart-container"><canvas id="fullChart"></canvas></div>
-    <div id="tableView" style="display:none; margin-top:15px;" class="table-wrapper">
-      <table id="detailTable"><thead><tr><th>Date/Time</th><th>Value</th></tr></thead><tbody></tbody></table>
+    <div id="tableView" style="display:none; margin-top:20px;" class="table-wrapper">
+      <table><thead><tr><th>Date & Time</th><th>Recorded Value</th></tr></thead><tbody id="detailBody"></tbody></table>
     </div>
   </div>
 </div>
 
 <div class="overlay-view" id="masterOverlay">
-  <div class="toolbar"><h2>MASTER DATA LOG</h2><button class="btn" onclick="document.getElementById('masterOverlay').style.display='none'">CLOSE</button></div>
+  <div class="toolbar">
+    <h2 style="flex-grow:1;">MASTER DATA LOG</h2>
+    <button class="btn" onclick="document.getElementById('masterOverlay').style.display='none'">CLOSE</button>
+  </div>
   <div class="content-area">
     <div class="table-wrapper"><table id="masterTable"><thead>
-      <tr><th>Time</th><th>Temp</th><th>Dew</th><th>Hum</th><th>Wind</th><th>Gust</th><th>hPa</th><th>Solar</th><th>UV</th></tr>
+      <tr><th>Date & Time</th><th>Temp</th><th>Dew</th><th>Hum</th><th>Wind</th><th>Gust</th><th>hPa</th><th>Solar</th><th>UV</th></tr>
     </thead><tbody></tbody></table></div>
   </div>
 </div>
 
-<footer id="status">METRICS LOADING...</footer>
+<footer id="status">INITIALIZING STATION...</footer>
 
 <script>
 const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
@@ -137,12 +141,13 @@ async function updateUI() {
     const w = data[0].lastData;
 
     document.getElementById("temp").innerText = Math.round(w.tempf) + "°";
+    document.getElementById("humidity").innerText = w.humidity + "%";
     document.getElementById("wind").innerText = Math.round(w.windspeedmph);
     document.getElementById("gust-sub").innerText = `Gust: ${Math.round(w.windgustmph)} | Dir: ${degToCompass(w.winddir)}`;
     document.getElementById("solar").innerText = w.solarradiation;
     document.getElementById("uv-sub").innerText = `UV Index: ${w.uv}`;
     document.getElementById("rain").innerText = w.dailyrainin.toFixed(2);
-    document.getElementById("pressure").innerText = Math.round(w.baromrelin * 33.8639); // inHg to hPa
+    document.getElementById("pressure").innerText = Math.round(w.baromrelin * 33.8639);
     
     const dew = w.tempf - ((100 - w.humidity) / 5 * 1.8);
     document.getElementById("dew-sub").innerText = `Dew Point: ${Math.round(dew)}°`;
@@ -160,17 +165,23 @@ async function loadHistory() {
   if(allHistory.length) {
     const temps = allHistory.map(d => d.tempf);
     const winds = allHistory.map(d => d.windspeedmph);
+    const solars = allHistory.map(d => d.solarradiation);
+    
     document.getElementById("s-th").innerText = Math.max(...temps) + "°";
     document.getElementById("s-tl").innerText = Math.min(...temps) + "°";
     document.getElementById("s-ta").innerText = (temps.reduce((a,b)=>a+b)/temps.length).toFixed(1) + "°";
     document.getElementById("s-wh").innerText = Math.max(...winds) + " mph";
     document.getElementById("s-wa").innerText = (winds.reduce((a,b)=>a+b)/winds.length).toFixed(1) + " mph";
+    document.getElementById("s-sh").innerText = Math.max(...solars);
+    document.getElementById("s-sa").innerText = (solars.reduce((a,b)=>a+b)/solars.length).toFixed(0);
   }
 }
 
 function openChart(v) {
   currentVar = v;
+  document.getElementById('graphTitle').innerText = v.toUpperCase() + " ANALYSIS";
   document.getElementById('overlay').style.display = 'flex';
+  document.getElementById('tableView').style.display = 'none';
   renderChart();
 }
 
@@ -179,7 +190,7 @@ function openMasterTable() {
   const tbody = document.querySelector("#masterTable tbody");
   tbody.innerHTML = allHistory.slice().reverse().map(d => `
     <tr>
-      <td>${new Date(d.date).toLocaleString([], {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'})}</td>
+      <td>${new Date(d.date).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</td>
       <td>${Math.round(d.tempf)}°</td>
       <td>${Math.round(d.tempf - ((100 - d.humidity) / 5 * 1.8))}°</td>
       <td>${d.humidity}%</td>
@@ -194,17 +205,19 @@ function openMasterTable() {
 
 function toggleTable() {
   const view = document.getElementById('tableView');
+  const btn = document.getElementById('toggleBtn');
   view.style.display = view.style.display === 'none' ? 'block' : 'none';
+  btn.innerText = view.style.display === 'none' ? 'SHOW TABLE' : 'HIDE TABLE';
   if(view.style.display === 'block') {
-    const tbody = document.querySelector("#detailTable tbody");
+    const tbody = document.getElementById("detailBody");
     tbody.innerHTML = allHistory.slice().reverse().map(d => `
-      <tr><td>${new Date(d.date).toLocaleString()}</td><td>${d[getVarKey(currentVar)] || '--'}</td></tr>
+      <tr><td>${new Date(d.date).toLocaleString()}</td><td><b>${d[getVarKey(currentVar)] || '--'}</b></td></tr>
     `).join('');
   }
 }
 
 function getVarKey(v) {
-  return {temp:'tempf', wind:'windspeedmph', gust:'windgustmph', solar:'solarradiation', rain:'dailyrainin', pressure:'baromrelin'}[v];
+  return {temp:'tempf', humidity:'humidity', wind:'windspeedmph', solar:'solarradiation', rain:'dailyrainin', pressure:'baromrelin'}[v];
 }
 
 function renderChart() {
@@ -216,15 +229,14 @@ function renderChart() {
     label: currentVar.toUpperCase(),
     data: allHistory.map(d => d[getVarKey(currentVar)]),
     borderColor: '#00d2ff', backgroundColor: 'rgba(0, 210, 255, 0.1)',
-    fill: true, tension: 0.2, pointRadius: 0
+    fill: true, tension: 0.2, pointRadius: 0, borderWidth: 3
   }];
 
   if(isWind) {
     datasets.push({
-      label: 'GUST',
-      data: allHistory.map(d => d.windgustmph),
+      label: 'GUST', data: allHistory.map(d => d.windgustmph),
       borderColor: '#ff4d4d', backgroundColor: 'transparent',
-      borderDash: [5, 5], tension: 0.2, pointRadius: 0
+      borderDash: [8, 4], tension: 0.2, pointRadius: 0, borderWidth: 2
     });
   }
 
@@ -237,14 +249,13 @@ function renderChart() {
       plugins: {
         zoom: { pan: { enabled: true, mode: 'xy' }, zoom: { pinch: { enabled: true }, mode: 'xy' } },
         tooltip: {
-            callbacks: {
-                title: (items) => new Date(items[0].parsed.x).toLocaleString()
-            }
+          enabled: true,
+          callbacks: { title: (items) => new Date(items[0].parsed.x).toLocaleString() }
         }
       },
       scales: {
-        x: { type: 'time', time: { unit: 'hour' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' } }
+        x: { type: 'time', time: { unit: 'hour' }, grid: { color: 'rgba(255,255,255,0.1)', lineWidth: 1 }, ticks: { font: {size: 14} } },
+        y: { grid: { color: 'rgba(255,255,255,0.1)', lineWidth: 1 }, ticks: { font: {size: 14} } }
       }
     }
   });
