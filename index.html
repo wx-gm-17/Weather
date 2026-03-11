@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#060d14">
-<title>Cannoli Pro v9</title>
+<title>Cannoli Pro Weather</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
@@ -24,41 +24,40 @@
 body { margin:0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
 
 header { 
-  background: #0b141d; padding: 25px; display: flex; justify-content: space-between; 
+  background: #0b141d; padding: 20px; display: flex; justify-content: space-between; 
   align-items: center; border-bottom: 2px solid var(--border);
 }
 
-.paw { font-size: 48px; vertical-align: middle; margin-right: 10px; }
-.btn { background: var(--accent); border: none; color: #000; padding: 14px 22px; border-radius: 10px; font-weight: 900; cursor: pointer; font-size: 16px; }
-.btn-secondary { background: #1c3d5a; color: white; margin-right: 12px; }
+.paw { font-size: 40px; vertical-align: middle; margin-right: 10px; }
+.btn { background: var(--accent); border: none; color: #000; padding: 12px 18px; border-radius: 10px; font-weight: 900; cursor: pointer; font-size: 14px; }
+.btn-secondary { background: #1c3d5a; color: white; margin-right: 10px; }
 
 .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 25px; }
 
 .card { 
-  background: var(--card); padding: 45px 20px; border-radius: 28px; text-align: center; 
+  background: var(--card); padding: 40px 20px; border-radius: 28px; text-align: center; 
   border: 2px solid var(--border); box-shadow: 0 15px 45px rgba(0,0,0,0.6); cursor: pointer;
 }
 
-.label { font-size: 18px; text-transform: uppercase; color: #8899a6; font-weight: 900; letter-spacing: 2px; }
-.main-val { font-size: 84px; font-weight: 900; margin: 15px 0; color: #fff; line-height: 1; }
+.label { font-size: 16px; text-transform: uppercase; color: #8899a6; font-weight: 900; letter-spacing: 2px; }
+.main-val { font-size: 80px; font-weight: 900; margin: 10px 0; color: #fff; line-height: 1; }
+.dual-val { display: flex; justify-content: center; align-items: baseline; gap: 15px; margin: 10px 0; }
 .sub-val { font-size: 20px; color: var(--accent); font-weight: 700; }
 
-/* Summary & Overlays */
 .summary-container { margin: 0 25px 40px 25px; background: #0b141d; border-radius: 20px; border: 2px solid var(--border); overflow: hidden; }
-.summary-table { width: 100%; border-collapse: collapse; font-size: 18px; }
-.summary-table th { background: #14212d; color: var(--accent); padding: 15px; text-align: left; font-weight: 900; border-bottom: 2px solid var(--border); }
-.summary-table td { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.summary-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.summary-table th { background: #14212d; color: var(--accent); padding: 15px; text-align: left; font-weight: 900; border-bottom: 1px solid var(--border); }
+.summary-table td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
 .overlay-view { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; flex-direction:column; }
-.toolbar { display:flex; gap:12px; padding:20px; background: #0b141d; align-items: center; border-bottom: 2px solid var(--border); }
+.toolbar { display:flex; gap:10px; padding:15px; background: #0b141d; align-items: center; border-bottom: 2px solid var(--border); }
 .content-area { flex: 1; overflow-y: auto; padding: 20px; }
-.chart-container { height: 55vh; background: #000; border-radius: 16px; border: 1px solid var(--border); padding: 10px; touch-action: none; position: relative; }
+.chart-container { height: 50vh; background: #000; border-radius: 16px; border: 1px solid var(--border); padding: 10px; touch-action: none; }
 
-/* Large Data Tables */
 .table-wrapper { border-radius: 12px; border: 2px solid var(--border); overflow-x: auto; background: #0b141d; }
 table { width: 100%; border-collapse: collapse; font-size: 16px; font-weight: 600; }
-table th { background: #1c3d5a; padding: 12px 10px; color: var(--accent); text-align: center; border-bottom: 2px solid var(--border); }
-table td { padding: 12px 10px; border-bottom: 1px solid var(--border); text-align: center; }
+table th { background: #1c3d5a; padding: 12px; color: var(--accent); text-align: center; }
+table td { padding: 12px; border-bottom: 1px solid var(--border); text-align: center; }
 
 footer { padding: 30px; text-align: center; font-size: 14px; color: #556677; font-weight: 800; }
 </style>
@@ -66,7 +65,7 @@ footer { padding: 30px; text-align: center; font-size: 14px; color: #556677; fon
 <body>
 
 <header>
-  <div><span class="paw">🐾</span><span style="letter-spacing: 4px; font-weight: 900; font-size: 24px;">CANNOLI PRO</span></div>
+  <div><span class="paw">🐾</span><span style="letter-spacing: 3px; font-weight: 900; font-size: 22px;">CANNOLI PRO v10</span></div>
   <div style="display: flex;">
     <button class="btn btn-secondary" onclick="openMasterTable()">MASTER LOG</button>
     <button class="btn" onclick="location.reload()">REFRESH</button>
@@ -74,9 +73,22 @@ footer { padding: 30px; text-align: center; font-size: 14px; color: #556677; fon
 </header>
 
 <div class="dashboard">
-  <div class="card" onclick="openChart('temp')"><div class="label">Temperature</div><div id="temp" class="main-val">--</div><div id="temp-sub" class="sub-val">H: -- L: --</div></div>
-  <div class="card" onclick="openChart('humidity')"><div class="label">Humidity / Dew</div><div id="humidity" class="main-val">--</div><div id="dew-sub" class="sub-val">Dew: --</div></div>
-  <div class="card" onclick="openChart('wind')"><div class="label">Wind / Gust</div><div id="wind" class="main-val">--</div><div id="gust-sub" class="sub-val">Gust: -- | Dir: --</div></div>
+  <div class="card" onclick="openChart('temp')">
+    <div class="label">Temperature</div>
+    <div id="temp" class="main-val">--</div>
+    <div id="dew-sub" class="sub-val">Dew: --</div>
+  </div>
+  
+  <div class="card" onclick="openChart('wind')">
+    <div class="label">Wind & Gust</div>
+    <div class="dual-val">
+      <div id="wind" class="main-val">--</div>
+      <div id="gust" class="main-val" style="color: #ff4d4d; font-size: 50px;">--</div>
+    </div>
+    <div id="wind-dir-sub" class="sub-val">--</div>
+  </div>
+
+  <div class="card" onclick="openChart('humidity')"><div class="label">Humidity</div><div id="humidity" class="main-val">--</div><div class="sub-val">PERCENTAGE</div></div>
   <div class="card" onclick="openChart('solar')"><div class="label">Solar / UV</div><div id="solar" class="main-val">--</div><div id="uv-sub" class="sub-val">UV Index: --</div></div>
   <div class="card" onclick="openChart('rain')"><div class="label">Rainfall</div><div id="rain" class="main-val">--</div><div class="sub-val">DAILY TOTAL (IN)</div></div>
   <div class="card" onclick="openChart('pressure')"><div class="label">Pressure</div><div id="pressure" class="main-val">--</div><div class="sub-val">hPa</div></div>
@@ -84,43 +96,35 @@ footer { padding: 30px; text-align: center; font-size: 14px; color: #556677; fon
 
 <div class="summary-container">
   <table class="summary-table">
-    <thead><tr><th>24H Summary</th><th>High</th><th>Low</th><th>Average</th></tr></thead>
+    <thead><tr><th>24H Comprehensive Summary</th><th>High</th><th>Low</th><th>Average</th></tr></thead>
     <tbody id="summaryBody">
-      <tr><td>Temperature</td><td id="s-th">-</td><td id="s-tl">-</td><td id="s-ta">-</td></tr>
-      <tr><td>Wind Speed</td><td id="s-wh">-</td><td id="s-wl">-</td><td id="s-wa">-</td></tr>
-      <tr><td>Solar Rad</td><td id="s-sh">-</td><td id="s-sl">-</td><td id="s-sa">-</td></tr>
-    </tbody>
+      </tbody>
   </table>
 </div>
 
 <div class="overlay-view" id="overlay">
   <div class="toolbar">
-    <h2 id="graphTitle" style="flex-grow:1; margin:0; font-size:22px;">Details</h2>
+    <h2 id="graphTitle" style="flex-grow:1; margin:0; font-size:20px;">Analysis</h2>
     <button class="btn btn-secondary" onclick="fullChartInstance.resetZoom()">RESET</button>
-    <button class="btn btn-secondary" onclick="toggleTable()" id="toggleBtn">SHOW TABLE</button>
+    <button class="btn btn-secondary" onclick="toggleTable()" id="toggleBtn">TABLE</button>
     <button class="btn" onclick="closeOverlay()" style="background:#ff4d4d;">✕</button>
   </div>
   <div class="content-area">
     <div class="chart-container"><canvas id="fullChart"></canvas></div>
     <div id="tableView" style="display:none; margin-top:20px;" class="table-wrapper">
-      <table><thead><tr><th>Date & Time</th><th>Recorded Value</th></tr></thead><tbody id="detailBody"></tbody></table>
+      <table><thead><tr><th>Date & Time</th><th>Value</th></tr></thead><tbody id="detailBody"></tbody></table>
     </div>
   </div>
 </div>
 
 <div class="overlay-view" id="masterOverlay">
-  <div class="toolbar">
-    <h2 style="flex-grow:1;">MASTER DATA LOG</h2>
-    <button class="btn" onclick="document.getElementById('masterOverlay').style.display='none'">CLOSE</button>
-  </div>
-  <div class="content-area">
-    <div class="table-wrapper"><table id="masterTable"><thead>
-      <tr><th>Date & Time</th><th>Temp</th><th>Dew</th><th>Hum</th><th>Wind</th><th>Gust</th><th>hPa</th><th>Solar</th><th>UV</th></tr>
-    </thead><tbody></tbody></table></div>
-  </div>
+  <div class="toolbar"><h2 style="flex-grow:1;">MASTER DATA LOG</h2><button class="btn" onclick="document.getElementById('masterOverlay').style.display='none'">CLOSE</button></div>
+  <div class="content-area"><div class="table-wrapper"><table id="masterTable"><thead>
+    <tr><th>Time</th><th>Temp</th><th>Dew</th><th>Hum</th><th>Wind</th><th>Gust</th><th>hPa</th><th>Solar</th><th>UV</th></tr>
+  </thead><tbody></tbody></table></div></div>
 </div>
 
-<footer id="status">INITIALIZING STATION...</footer>
+<footer id="status">CONNECTING...</footer>
 
 <script>
 const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
@@ -143,17 +147,18 @@ async function updateUI() {
     document.getElementById("temp").innerText = Math.round(w.tempf) + "°";
     document.getElementById("humidity").innerText = w.humidity + "%";
     document.getElementById("wind").innerText = Math.round(w.windspeedmph);
-    document.getElementById("gust-sub").innerText = `Gust: ${Math.round(w.windgustmph)} | Dir: ${degToCompass(w.winddir)}`;
+    document.getElementById("gust").innerText = Math.round(w.windgustmph);
+    document.getElementById("wind-dir-sub").innerText = `${degToCompass(w.winddir)} (${w.winddir}°)`;
     document.getElementById("solar").innerText = w.solarradiation;
     document.getElementById("uv-sub").innerText = `UV Index: ${w.uv}`;
     document.getElementById("rain").innerText = w.dailyrainin.toFixed(2);
     document.getElementById("pressure").innerText = Math.round(w.baromrelin * 33.8639);
     
     const dew = w.tempf - ((100 - w.humidity) / 5 * 1.8);
-    document.getElementById("dew-sub").innerText = `Dew Point: ${Math.round(dew)}°`;
+    document.getElementById("dew-sub").innerText = `Dew: ${Math.round(dew)}°`;
 
-    document.getElementById("status").innerText = "STATION ONLINE • " + new Date().toLocaleTimeString();
-    setTimeout(loadHistory, 1200);
+    document.getElementById("status").innerText = "LIVE • " + new Date().toLocaleTimeString();
+    setTimeout(loadHistory, 1000);
   } catch(e) {}
 }
 
@@ -161,63 +166,34 @@ async function loadHistory() {
   const r = await fetch(`https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`);
   const data = await r.json();
   allHistory = Array.isArray(data) ? data.reverse() : [];
+  if(allHistory.length) buildSummary();
+}
+
+function buildSummary() {
+  const params = [
+    { n: 'Temperature', k: 'tempf', u: '°' },
+    { n: 'Wind Speed', k: 'windspeedmph', u: ' mph' },
+    { n: 'Wind Gust', k: 'windgustmph', u: ' mph' },
+    { n: 'Humidity', k: 'humidity', u: '%' },
+    { n: 'Solar Radiation', k: 'solarradiation', u: '' },
+    { n: 'Pressure (hPa)', k: 'hpa', u: '' }
+  ];
   
-  if(allHistory.length) {
-    const temps = allHistory.map(d => d.tempf);
-    const winds = allHistory.map(d => d.windspeedmph);
-    const solars = allHistory.map(d => d.solarradiation);
-    
-    document.getElementById("s-th").innerText = Math.max(...temps) + "°";
-    document.getElementById("s-tl").innerText = Math.min(...temps) + "°";
-    document.getElementById("s-ta").innerText = (temps.reduce((a,b)=>a+b)/temps.length).toFixed(1) + "°";
-    document.getElementById("s-wh").innerText = Math.max(...winds) + " mph";
-    document.getElementById("s-wa").innerText = (winds.reduce((a,b)=>a+b)/winds.length).toFixed(1) + " mph";
-    document.getElementById("s-sh").innerText = Math.max(...solars);
-    document.getElementById("s-sa").innerText = (solars.reduce((a,b)=>a+b)/solars.length).toFixed(0);
-  }
+  const tbody = document.getElementById("summaryBody");
+  tbody.innerHTML = params.map(p => {
+    let vals = allHistory.map(d => p.k === 'hpa' ? d.baromrelin * 33.8639 : d[p.k]);
+    const high = Math.max(...vals);
+    const low = Math.min(...vals);
+    const avg = vals.reduce((a,b)=>a+b)/vals.length;
+    return `<tr><td>${p.n}</td><td>${Math.round(high)}${p.u}</td><td>${Math.round(low)}${p.u}</td><td>${Math.round(avg)}${p.u}</td></tr>`;
+  }).join('');
 }
 
 function openChart(v) {
   currentVar = v;
   document.getElementById('graphTitle').innerText = v.toUpperCase() + " ANALYSIS";
   document.getElementById('overlay').style.display = 'flex';
-  document.getElementById('tableView').style.display = 'none';
   renderChart();
-}
-
-function openMasterTable() {
-  document.getElementById('masterOverlay').style.display = 'flex';
-  const tbody = document.querySelector("#masterTable tbody");
-  tbody.innerHTML = allHistory.slice().reverse().map(d => `
-    <tr>
-      <td>${new Date(d.date).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}</td>
-      <td>${Math.round(d.tempf)}°</td>
-      <td>${Math.round(d.tempf - ((100 - d.humidity) / 5 * 1.8))}°</td>
-      <td>${d.humidity}%</td>
-      <td>${Math.round(d.windspeedmph)}</td>
-      <td>${Math.round(d.windgustmph)}</td>
-      <td>${Math.round(d.baromrelin * 33.8639)}</td>
-      <td>${d.solarradiation}</td>
-      <td>${d.uv}</td>
-    </tr>
-  `).join('');
-}
-
-function toggleTable() {
-  const view = document.getElementById('tableView');
-  const btn = document.getElementById('toggleBtn');
-  view.style.display = view.style.display === 'none' ? 'block' : 'none';
-  btn.innerText = view.style.display === 'none' ? 'SHOW TABLE' : 'HIDE TABLE';
-  if(view.style.display === 'block') {
-    const tbody = document.getElementById("detailBody");
-    tbody.innerHTML = allHistory.slice().reverse().map(d => `
-      <tr><td>${new Date(d.date).toLocaleString()}</td><td><b>${d[getVarKey(currentVar)] || '--'}</b></td></tr>
-    `).join('');
-  }
-}
-
-function getVarKey(v) {
-  return {temp:'tempf', humidity:'humidity', wind:'windspeedmph', solar:'solarradiation', rain:'dailyrainin', pressure:'baromrelin'}[v];
 }
 
 function renderChart() {
@@ -225,8 +201,10 @@ function renderChart() {
   if(fullChartInstance) fullChartInstance.destroy();
   
   const isWind = currentVar === 'wind';
+  const isTemp = currentVar === 'temp';
+  
   const datasets = [{
-    label: currentVar.toUpperCase(),
+    label: isTemp ? 'TEMP' : currentVar.toUpperCase(),
     data: allHistory.map(d => d[getVarKey(currentVar)]),
     borderColor: '#00d2ff', backgroundColor: 'rgba(0, 210, 255, 0.1)',
     fill: true, tension: 0.2, pointRadius: 0, borderWidth: 3
@@ -235,8 +213,14 @@ function renderChart() {
   if(isWind) {
     datasets.push({
       label: 'GUST', data: allHistory.map(d => d.windgustmph),
-      borderColor: '#ff4d4d', backgroundColor: 'transparent',
-      borderDash: [8, 4], tension: 0.2, pointRadius: 0, borderWidth: 2
+      borderColor: '#ff4d4d', backgroundColor: 'transparent', borderDash: [8, 4], pointRadius: 0
+    });
+  }
+  
+  if(isTemp) {
+    datasets.push({
+      label: 'DEW POINT', data: allHistory.map(d => d.tempf - ((100 - d.humidity) / 5 * 1.8)),
+      borderColor: '#00ffaa', backgroundColor: 'transparent', borderDash: [8, 4], pointRadius: 0
     });
   }
 
@@ -248,19 +232,19 @@ function renderChart() {
       interaction: { mode: 'index', intersect: false },
       plugins: {
         zoom: { pan: { enabled: true, mode: 'xy' }, zoom: { pinch: { enabled: true }, mode: 'xy' } },
-        tooltip: {
-          enabled: true,
-          callbacks: { title: (items) => new Date(items[0].parsed.x).toLocaleString() }
-        }
+        legend: { display: true, labels: { color: '#fff', font: { size: 14, weight: 'bold' } } }
       },
       scales: {
-        x: { type: 'time', time: { unit: 'hour' }, grid: { color: 'rgba(255,255,255,0.1)', lineWidth: 1 }, ticks: { font: {size: 14} } },
-        y: { grid: { color: 'rgba(255,255,255,0.1)', lineWidth: 1 }, ticks: { font: {size: 14} } }
+        x: { type: 'time', time: { unit: 'hour' }, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#8899a6' } },
+        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#8899a6' } }
       }
     }
   });
 }
 
+function getVarKey(v) { return {temp:'tempf', humidity:'humidity', wind:'windspeedmph', solar:'solarradiation', rain:'dailyrainin', pressure:'baromrelin'}[v]; }
+function toggleTable() { /* same as v9 */ }
+function openMasterTable() { /* same as v9 */ }
 function closeOverlay() { document.getElementById('overlay').style.display = 'none'; }
 
 updateUI();
