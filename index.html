@@ -1,14 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" translate="no">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Cannoli's Weather Station</title>
-
-<link rel="apple-touch-icon" href="https://placekitten.com/192/192">
-<link rel="icon" href="https://placekitten.com/192/192">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
@@ -17,74 +14,123 @@
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
 
 <style>
+:root {
+  --bg-color: #0c1b2a;
+  --card-bg: rgba(28, 61, 90, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.15);
+}
+
 html, body { 
-  margin:0; padding:0; background:#0c1b2a; color:white; overflow: hidden; 
+  margin:0; padding:0; background: var(--bg-color); color:white; overflow: hidden; 
   position: fixed; width: 100%; height: 100%; overscroll-behavior-y: contain; 
-  font-family: Segoe UI, Arial, sans-serif;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
-header { background:#142b44; padding:20px; text-align:center; font-size:28px; border-bottom: 2px solid #1c3d5a; }
 
-/* DASHBOARD BACKGROUND FIX (where we add Cannoli's stylized face) */
+header { 
+  background: linear-gradient(180deg, #142b44 0%, #0c1b2a 100%);
+  padding: 25px 10px; text-align:center; font-size:32px; font-weight: 300;
+  letter-spacing: 2px; border-bottom: 1px solid var(--glass-border);
+}
+
 .dashboard { 
-  display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; padding:15px; 
-  overflow-y: auto; max-height: 75vh;
-  
-  /* Apply the generated stylized Cannoli image as a faint, repeating watermark */
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:15px; padding:20px; 
+  overflow-y: auto; max-height: 80vh;
   background-image: url('https://replicate.delivery/pbxt/kR4eN0H3G4R8O644Vf8kH69J07R2m1w0W0Q0W0Q0W0Q0W0Q0W0Q0W0Q0/replicate-prediction-r0p644h4g4r8j644n8p4f2f6w2.png');
-  background-size: 100px; /* Small, repeating pattern */
-  background-repeat: repeat;
-  background-attachment: scroll;
-  opacity: 0.1; /* Very faint so it's a subtle design element, not a distraction */
+  background-size: 120px; background-repeat: repeat;
 }
 
-/* Make sure the cards look good on the new background */
-.card { background: rgba(28, 61, 90, 0.9); padding:15px 10px; border-radius:12px; text-align:center; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.1); }
-.card:hover { background: rgba(58, 91, 124, 1); }
+.card { 
+  background: var(--card-bg); backdrop-filter: blur(10px);
+  padding: 20px 10px; border-radius: 16px; text-align: center; cursor: pointer; 
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5); border: 1px solid var(--glass-border);
+  transition: transform 0.2s, background 0.3s;
+}
+
+.card:active { transform: scale(0.96); }
+
+.label { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #aaa; margin-bottom: 8px; }
+.main-val { font-size: 38px; font-weight: 700; margin: 5px 0; }
+.sub-val { font-size: 12px; color: #888; font-weight: 400; }
+
+/* Dynamic States */
+.alert-red { color: #ff4d4d !important; text-shadow: 0 0 10px rgba(255,77,77,0.5); }
+.temp-cold { color: #4dadff !important; }
+.temp-warm { color: #ff9f4d !important; }
+.temp-hot { color: #ff4d4d !important; }
 
 .fullscreen-chart {
   display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-  background:#0c1b2a; z-index:1000; flex-direction:column; align-items:center; padding-top:10px;
+  background: var(--bg-color); z-index: 1000; flex-direction:column; align-items:center; padding-top:10px;
 }
 .chart-container {
-  position: relative; width: 95%; height: 60vh; background: white; 
-  border-radius: 15px; overflow: hidden; touch-action: none;
+  position: relative; width: 95%; height: 60vh; background: #fff; 
+  border-radius: 20px; overflow: hidden; touch-action: none;
 }
-#fullChart { touch-action: none; cursor: crosshair; }
-.fullscreen-toolbar { display:flex; justify-content:center; gap:8px; padding:15px; flex-wrap:wrap; width:100%; }
-.fullscreen-toolbar button { background:#1c3d5a; color:white; border:none; padding:12px 16px; font-size:14px; border-radius:8px; font-weight: bold; }
-.close-chart { background:#d32f2f !important; }
-#chartSubtitle { margin-bottom: 10px; font-size: 14px; color: #aaa; text-align: center; }
-footer { padding:10px; text-align:center; font-size:12px; opacity:0.6; position: absolute; bottom: 10px; width: 100%; }
+#fullChart { touch-action: none; }
+.fullscreen-toolbar { display:flex; justify-content:center; gap:10px; padding:20px; flex-wrap:wrap; width:100%; }
+.fullscreen-toolbar button { background: #1c3d5a; color: white; border: none; padding: 12px 20px; font-size: 14px; border-radius: 10px; font-weight: 600; }
+.close-chart { background: #d32f2f !important; }
+#chartSubtitle { margin-bottom: 15px; font-size: 14px; color: #aaa; text-align: center; }
+footer { padding: 15px; text-align: center; font-size: 11px; opacity: 0.5; position: absolute; bottom: 0; width: 100%; }
 </style>
 </head>
 
 <body>
-<header>🐾 Cannoli's Station</header>
+<header>🐾 CANNOLI STATION</header>
 
 <div class="dashboard">
-  <div class="card" onclick="openChart('temp')">Temp<br><span id="temp">--</span>°F</div>
-  <div class="card" onclick="openChart('humidity')">Humidity<br><span id="humidity">--</span>%</div>
-  <div class="card" onclick="openChart('pressure')">Pressure<br><span id="pressure">--</span> inHg</div>
-  <div class="card" onclick="openChart('wind')">Wind Speed<br><span id="wind">--</span> mph</div>
-  <div class="card" onclick="openChart('gust')">Wind Gust<br><span id="gust">--</span> mph</div>
-  <div class="card" onclick="openChart('rain')">Daily Rain<br><span id="rain">--</span> in</div>
+  <div class="card" onclick="openChart('temp')">
+    <div class="label">Temperature</div>
+    <div id="temp" class="main-val notranslate">--</div>
+    <div id="temp-sub" class="sub-val">H: -- L: --</div>
+  </div>
+  
+  <div class="card" onclick="openChart('humidity')">
+    <div class="label">Humidity</div>
+    <div id="humidity" class="main-val notranslate">--</div>
+    <div id="humidity-sub" class="sub-val">Indoor: --%</div>
+  </div>
+
+  <div class="card" onclick="openChart('wind')">
+    <div class="label">Wind Speed</div>
+    <div id="wind" class="main-val notranslate">--</div>
+    <div class="sub-val">Steady MPH</div>
+  </div>
+
+  <div class="card" onclick="openChart('gust')">
+    <div class="label">Wind Gust</div>
+    <div id="gust" class="main-val notranslate">--</div>
+    <div id="gust-sub" class="sub-val">Max Today: --</div>
+  </div>
+
+  <div class="card" onclick="openChart('rain')">
+    <div class="label">Precipitation</div>
+    <div id="rain" class="main-val notranslate">--</div>
+    <div id="rain-sub" class="sub-val">Event: -- in</div>
+  </div>
+
+  <div class="card" onclick="openChart('pressure')">
+    <div class="label">Pressure</div>
+    <div id="pressure" class="main-val notranslate">--</div>
+    <div id="pressure-sub" class="sub-val">Relative inHg</div>
+  </div>
 </div>
 
 <div class="fullscreen-chart" id="fullscreenChartContainer">
   <div class="fullscreen-toolbar">
-    <button onclick="setIntervalHours(6)">6h</button>
-    <button onclick="setIntervalHours(12)">12h</button>
-    <button onclick="setIntervalHours(24)">24h</button>
-    <button onclick="resetZoom()">Reset</button>
-    <button class="close-chart" onclick="closeChart()">✕ Close</button>
+    <button onclick="setIntervalHours(6)">6H</button>
+    <button onclick="setIntervalHours(12)">12H</button>
+    <button onclick="setIntervalHours(24)">24H</button>
+    <button onclick="resetZoom()">RESET</button>
+    <button class="close-chart" onclick="closeChart()">✕ CLOSE</button>
   </div>
-  <div id="chartSubtitle">Pinch to Zoom • Drag to Pan<br><small>Last <span id="displayHours">24</span> hours</small></div>
+  <div id="chartSubtitle">Pinch to Zoom • Drag to Pan<br><small id="displayHoursLabel">Last 24 hours</small></div>
   <div class="chart-container">
     <canvas id="fullChart"></canvas>
   </div>
 </div>
 
-<footer id="time">Connecting to Ambient Weather...</footer>
+<footer id="time">INITIALIZING...</footer>
 
 <script>
 const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
@@ -92,136 +138,122 @@ const appKey = "b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f
 const mac = "4C:EB:D6:1E:22:57";
 
 let allHistory = [];
+let fullChartInstance = null;
 let currentVariable = 'temp';
 let currentInterval = 24;
-let fullChartInstance = null;
 
-async function loadCurrent() {
+async function updateUI() {
   try {
     const url = `https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
     const r = await fetch(url);
     const data = await r.json();
+    if (!data || !data[0]) return;
     const w = data[0].lastData;
-    document.getElementById("temp").innerHTML = w.tempf || "--";
-    document.getElementById("humidity").innerHTML = w.humidity || "--";
-    document.getElementById("pressure").innerHTML = w.baromrelin || "--";
-    document.getElementById("wind").innerHTML = w.windspeedmph || "0";
-    document.getElementById("gust").innerHTML = w.windgustmph || "0";
-    document.getElementById("rain").innerHTML = w.dailyrainin || "0.00";
-    document.getElementById("time").innerHTML = "Last update: " + new Date(w.date).toLocaleString();
-  } catch(e){ console.error(e); }
+
+    // TEMPERATURE LOGIC
+    const tElem = document.getElementById("temp");
+    const temp = w.tempf || 0;
+    tElem.innerText = temp + "°";
+    tElem.className = "main-val notranslate"; // Reset
+    if(temp < 32) tElem.classList.add("temp-cold");
+    else if(temp >= 90) tElem.classList.add("temp-hot");
+    else if(temp >= 80) tElem.classList.add("temp-warm");
+    document.getElementById("temp-sub").innerText = `Feels Like: ${w.feelsLike || '--'}°`;
+
+    // WIND GUST LOGIC
+    const gElem = document.getElementById("gust");
+    const gust = w.windgustmph || 0;
+    gElem.innerText = gust;
+    if(gust >= 30) gElem.classList.add("alert-red");
+    else gElem.classList.remove("alert-red");
+    document.getElementById("gust-sub").innerText = `Max: ${w.maxdailygust || '--'} mph`;
+
+    // OTHER DATA
+    document.getElementById("humidity").innerText = w.humidity + "%";
+    document.getElementById("humidity-sub").innerText = `Indoor: ${w.tempinf || '--'}°`;
+    document.getElementById("wind").innerText = w.windspeedmph || "0";
+    document.getElementById("rain").innerText = w.dailyrainin.toFixed(2) + '"';
+    document.getElementById("rain-sub").innerText = `Month: ${w.monthlyrainin || '0'}"`;
+    document.getElementById("pressure").innerText = w.baromrelin.toFixed(2);
+    
+    document.getElementById("time").innerText = "STATION ONLINE • " + new Date(w.date).toLocaleString();
+  } catch(e) { console.error(e); }
 }
 
 async function loadHistory() {
   try {
     const url = `https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`;
     const r = await fetch(url);
-    if(r.status === 429) return;
     const history = await r.json();
     if(Array.isArray(history)) {
         allHistory = history.reverse();
         if(fullChartInstance) renderFullChart();
     }
-  } catch(e){ console.error(e); }
+  } catch(e) { console.error(e); }
 }
 
-function openChart(variable){
-  currentVariable = variable;
+function openChart(v) {
+  currentVariable = v;
   document.getElementById('fullscreenChartContainer').style.display = 'flex';
   renderFullChart();
 }
 
-function closeChart(){
+function closeChart() {
   document.getElementById('fullscreenChartContainer').style.display = 'none';
   if(fullChartInstance) fullChartInstance.destroy();
   fullChartInstance = null;
 }
 
-function resetZoom(){ if(fullChartInstance) fullChartInstance.resetZoom(); }
+function resetZoom() { if(fullChartInstance) fullChartInstance.resetZoom(); }
 
-function setIntervalHours(h){
+function setIntervalHours(h) {
   currentInterval = h;
-  document.getElementById('displayHours').innerText = h;
+  document.getElementById('displayHoursLabel').innerText = `Last ${h} hours`;
   renderFullChart();
 }
 
-function aggregateHourly(data){
-  const grouped = {};
-  data.forEach(d=>{
-    const hour = new Date(d.date); hour.setMinutes(0,0,0);
-    const key = hour.getTime();
-    if(!grouped[key]) grouped[key] = [];
-    grouped[key].push(d);
-  });
-  const labels=[], values=[];
-  for(const k of Object.keys(grouped).sort((a,b)=>a-b)){
-    const arr = grouped[k];
-    labels.push(new Date(parseInt(k)));
-    const valMap = {
-      temp: arr.reduce((s,v)=>(s + (v.tempf || 0)),0)/arr.length,
-      humidity: arr.reduce((s,v)=>(s + (v.humidity || 0)),0)/arr.length,
-      wind: arr.reduce((s,v)=>(s + (v.windspeedmph || 0)),0)/arr.length,
-      gust: arr.reduce((s,v)=>(s + (v.windgustmph || 0)),0)/arr.length,
-      rain: arr.reduce((s,v)=>(s + (v.hourlyrainin || v.rainhourlyin || 0)),0)
-    };
-    values.push(valMap[currentVariable]);
-  }
-  return {labels, values};
-}
-
-function getChartData(){
-  const cutoff = Date.now() - currentInterval*60*60*1000;
-  const filtered = allHistory.filter(d=>new Date(d.date).getTime()>=cutoff);
-  if(currentInterval >= 12) return aggregateHourly(filtered);
-  const labels=[], values=[];
-  filtered.forEach(d=>{
-    labels.push(new Date(d.date));
-    const valMap = { temp: d.tempf, humidity: d.humidity, wind: d.windspeedmph, gust: d.windgustmph, rain: (d.hourlyrainin || d.rainhourlyin || 0) };
-    values.push(valMap[currentVariable]);
-  });
-  return {labels, values};
-}
-
-function renderFullChart(){
-  const data = getChartData();
-  const colorMap = {temp:"orange", humidity:"lime", wind:"cyan", gust:"magenta", rain:"#3498db"};
-  const unitMap = {temp:"°F", humidity:"%", wind:"mph", gust:"mph", rain:"in"};
-  if(fullChartInstance) fullChartInstance.destroy();
-  const ctx = document.getElementById('fullChart').getContext('2d');
+function renderFullChart() {
+  const cutoff = Date.now() - currentInterval*3600000;
+  const filtered = allHistory.filter(d => new Date(d.date).getTime() >= cutoff);
+  const labels = filtered.map(d => new Date(d.date));
   
-  fullChartInstance = new Chart(ctx,{
-    type:'line',
-    data:{
-      labels:data.labels,
-      datasets:[{
-        label:currentVariable, data:data.values, borderColor:colorMap[currentVariable], backgroundColor:'rgba(255,255,255,0.05)', tension:0.3, pointRadius:0, fill: true
+  const map = {
+    temp: filtered.map(d => d.tempf),
+    humidity: filtered.map(d => d.humidity),
+    wind: filtered.map(d => d.windspeedmph),
+    gust: filtered.map(d => d.windgustmph),
+    rain: filtered.map(d => d.hourlyrainin || 0),
+    pressure: filtered.map(d => d.baromrelin)
+  };
+
+  const colorMap = {temp:"#ff9f4d", humidity:"#4dadff", wind:"#00f2ff", gust:"#ff4d4d", rain:"#3498db", pressure:"#aaa"};
+
+  if(fullChartInstance) fullChartInstance.destroy();
+  fullChartInstance = new Chart(document.getElementById('fullChart'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: map[currentVariable],
+        borderColor: colorMap[currentVariable],
+        borderWidth: 3,
+        pointRadius: 0,
+        fill: true,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        tension: 0.4
       }]
     },
-    options:{
-      responsive:true, maintainAspectRatio:false, animation: false,
-      interaction:{mode:'index', intersect:false},
-      plugins:{
-        legend:{display:false},
-        zoom:{
-          pan: { enabled: true, mode: 'x' },
-          zoom: { wheel: { enabled: true }, pinch: { enabled: true }, mode: 'x' }
-        }
-      },
-      scales:{
-        x:{ type:'time', ticks: { color: '#888' } },
-        y:{ beginAtZero: false, ticks: { color: '#888' } }
-      }
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false }, zoom: { pan: { enabled: true, mode: 'x' }, zoom: { pinch: { enabled: true }, wheel: { enabled: true }, mode: 'x' } } },
+      scales: { x: { type: 'time', ticks: { color: '#666' } }, y: { ticks: { color: '#666' } } }
     }
   });
 }
 
-async function initializeDashboard() {
-  await loadCurrent();
-  setTimeout(loadHistory, 1500); 
-}
-initializeDashboard();
-setInterval(loadCurrent, 60000); 
+updateUI();
+loadHistory();
+setInterval(updateUI, 60000);
 </script>
-
 </body>
 </html>
