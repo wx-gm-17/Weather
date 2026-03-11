@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cannoli's Weather</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#0d1b2a;
+    color:white;
+    text-align:center;
+}
+
+h1{
+    margin-top:30px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:20px;
+    max-width:900px;
+    margin:auto;
+    margin-top:40px;
+}
+
+.card{
+    background:#1b263b;
+    padding:25px;
+    border-radius:12px;
+    font-size:22px;
+}
+
+.value{
+    font-size:34px;
+    margin-top:10px;
+}
+
+.time{
+    margin-top:40px;
+    opacity:.7;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🌤 Cannoli's Weather</h1>
+
+<div class="grid">
+
+<div class="card">
+Temperature
+<div class="value" id="temp">--</div>
+</div>
+
+<div class="card">
+Humidity
+<div class="value" id="humidity">--</div>
+</div>
+
+<div class="card">
+Wind Speed
+<div class="value" id="wind">--</div>
+</div>
+
+<div class="card">
+Wind Gust
+<div class="value" id="gust">--</div>
+</div>
+
+<div class="card">
+Pressure
+<div class="value" id="pressure">--</div>
+</div>
+
+<div class="card">
+Rain Today
+<div class="value" id="rain">--</div>
+</div>
+
+</div>
+
+<div class="time" id="time"></div>
+
+<script>
+
+const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
+const appKey = "b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f";
+
+async function loadWeather(){
+
+const url = `https://rt.ambientweather.net/v1/devices?apiKey=${apiKey}&applicationKey=${appKey}`;
+
+const response = await fetch(url);
+const data = await response.json();
+
+const w = data[0].lastData;
+
+document.getElementById("temp").innerText = w.tempf + " °F";
+document.getElementById("humidity").innerText = w.humidity + " %";
+document.getElementById("wind").innerText = w.windspeedmph + " mph";
+document.getElementById("gust").innerText = w.windgustmph + " mph";
+document.getElementById("pressure").innerText = w.baromrelin + " inHg";
+document.getElementById("rain").innerText = w.dailyrainin + " in";
+
+document.getElementById("time").innerText =
+"Last updated: " + new Date(w.date).toLocaleString();
+
+}
+
+loadWeather();
+
+setInterval(loadWeather,60000);
+
+</script>
+
+</body>
+</html>
