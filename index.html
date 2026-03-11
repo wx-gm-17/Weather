@@ -6,20 +6,17 @@
 <title>Cannoli's Weather Station</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
 
 <style>
-body { font-family:Segoe UI, Arial; margin:0; background:#0c1b2a; color:white; overflow-x: hidden; }
+body { font-family:Segoe UI, Arial; margin:0; background:#0c1b2a; color:white; overflow: hidden; position: fixed; width: 100%; height: 100%; }
 header { background:#142b44; padding:20px; text-align:center; font-size:28px; }
 .dashboard { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; padding:10px; }
-.card { background:#1c3d5a; padding:15px 10px; border-radius:12px; text-align:center; cursor:pointer; transition: 0.2s; }
+.card { background:#1c3d5a; padding:15px 10px; border-radius:12px; text-align:center; cursor:pointer; }
 .card:hover { background:#3a5b7c; }
-.temp { font-size:32px; font-weight:bold; }
-canvas { background:white; border-radius:10px; max-width:100%; }
 
-/* Fullscreen chart container */
 .fullscreen-chart {
   display:none;
   position:fixed;
@@ -28,16 +25,24 @@ canvas { background:white; border-radius:10px; max-width:100%; }
   flex-direction:column;
   align-items:center;
   padding-top:10px;
+  touch-action: none; /* Prevents mobile pull-to-refresh */
 }
 
-/* CRITICAL: touch-action none prevents the browser from taking over the touch events */
+.chart-container {
+  position: relative;
+  width: 95%;
+  height: 60vh;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: grab; /* Shows user they can pan */
+}
+
+.chart-container:active { cursor: grabbing; }
+
 #fullChart {
-  width:95% !important;
-  height:60vh !important;
   touch-action: none; 
   user-select: none;
-  -webkit-user-drag: none;
-  -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
 
 .fullscreen-toolbar { 
@@ -56,9 +61,7 @@ canvas { background:white; border-radius:10px; max-width:100%; }
   font-size:14px; 
   border-radius:8px; 
   cursor:pointer; 
-  min-width: 60px;
 }
-.fullscreen-toolbar button:active { background:#4a6b8c; }
 .close-chart { background:#d32f2f !important; font-weight: bold; }
 #chartSubtitle { margin-bottom: 10px; font-size: 14px; color: #aaa; text-align: center; }
 </style>
@@ -84,8 +87,10 @@ canvas { background:white; border-radius:10px; max-width:100%; }
     <button onclick="resetZoom()">Reset</button>
     <button class="close-chart" onclick="closeChart()">✕ Close</button>
   </div>
-  <div id="chartSubtitle">Pinch to Zoom • Drag to Pan<br><small>Showing last <span id="displayHours">24</span> hours</small></div>
-  <canvas id="fullChart"></canvas>
+  <div id="chartSubtitle">Pinch/Scroll to Zoom • Drag to Pan<br><small>Last <span id="displayHours">24</span> hours</small></div>
+  <div class="chart-container">
+    <canvas id="fullChart"></canvas>
+  </div>
 </div>
 
 <footer id="time" style="padding:20px;text-align:center;font-size:12px;opacity:0.7;"></footer>
@@ -106,7 +111,6 @@ async function loadCurrent() {
     const r = await fetch(url);
     const data = await r.json();
     const w = data[0].lastData;
-
     document.getElementById("temp").innerHTML = w.tempf || "--";
     document.getElementById("humidity").innerHTML = w.humidity || "--";
     document.getElementById("pressure").innerHTML = w.baromrelin || "--";
@@ -155,8 +159,7 @@ function setIntervalHours(h){
 function aggregateHourly(data){
   const grouped = {};
   data.forEach(d=>{
-    const hour = new Date(d.date);
-    hour.setMinutes(0,0,0);
+    const hour = new Date(d.date); hour.setMinutes(0,0,0);
     const key = hour.getTime();
     if(!grouped[key]) grouped[key] = [];
     grouped[key].push(d);
@@ -194,7 +197,6 @@ function renderFullChart(){
   const data = getChartData();
   const colorMap = {temp:"orange", humidity:"lime", wind:"cyan", gust:"magenta", rain:"#3498db"};
   const unitMap = {temp:"°F", humidity:"%", wind:"mph", gust:"mph", rain:"in"};
-
   if(fullChartInstance) fullChartInstance.destroy();
   const ctx = document.getElementById('fullChart').getContext('2d');
   
@@ -203,19 +205,13 @@ function renderFullChart(){
     data:{
       labels:data.labels,
       datasets:[{
-        label:currentVariable, 
-        data:data.values, 
-        borderColor:colorMap[currentVariable], 
-        backgroundColor:'rgba(255,255,255,0.05)', 
-        tension:0.3, 
-        pointRadius:0,
-        fill: true
+        label:currentVariable, data:data.values, borderColor:colorMap[currentVariable], backgroundColor:'rgba(255,255,255,0.05)', tension:0.3, pointRadius:0, fill: true
       }]
     },
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      animation: false, // Disabling animation makes zooming feel snappier on mobile
+      animation: false,
       interaction:{mode:'index', intersect:false},
       plugins:{
         legend:{display:false},
@@ -223,26 +219,19 @@ function renderFullChart(){
           pan: {
             enabled: true,
             mode: 'x',
-            threshold: 5 // Helps distinguish between a tap and a drag
+            modifierKey: null // Allows panning without holding a key
           },
           zoom: {
             wheel: { enabled: true },
-            pinch: { enabled: true }, // Crucial for mobile
-            mode: 'x'
+            pinch: { enabled: true },
+            mode: 'x',
+            drag: { enabled: false } // Set to false to allow panning via drag
           }
         }
       },
       scales:{
-        x:{ 
-            type:'time', 
-            grid: { color: 'rgba(255,255,255,0.1)' },
-            ticks: { color: 'white' }
-        },
-        y:{ 
-            beginAtZero: false, 
-            grid: { color: 'rgba(255,255,255,0.1)' },
-            ticks: { color: 'white' }
-        }
+        x:{ type:'time', ticks: { color: '#666' } },
+        y:{ beginAtZero: false, ticks: { color: '#666' } }
       }
     }
   });
@@ -252,7 +241,6 @@ async function initializeDashboard() {
   await loadCurrent();
   setTimeout(loadHistory, 1500); 
 }
-
 initializeDashboard();
 setInterval(loadCurrent, 60000); 
 </script>
