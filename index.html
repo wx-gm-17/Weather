@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Cannoli Pro</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b141d">
+<title>Cannoli Pro v14</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
@@ -16,8 +20,8 @@
 
 <style>
 :root { --bg: #060d14; --card: rgba(18, 32, 47, 0.95); --accent: #00d2ff; --border: rgba(255, 255, 255, 0.15); --text: #fff; }
-body { margin:0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
-header { background: #0b141d; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); }
+body { margin:0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+header { background: #0b141d; padding: 25px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); }
 .btn { background: var(--accent); border: none; padding: 12px 18px; border-radius: 10px; font-weight: 900; cursor: pointer; color: #000; font-size: 14px; }
 .btn-secondary { background: #1c3d5a; color: white; margin-right: 8px; }
 
@@ -29,7 +33,7 @@ header { background: #0b141d; padding: 20px; display: flex; justify-content: spa
 
 .summary-container { margin: 25px; background: #0b141d; border-radius: 20px; border: 2px solid var(--border); overflow: hidden; }
 table { width: 100%; border-collapse: collapse; font-size: 18px; font-weight: 600; }
-th { background: #14212d; color: var(--accent); padding: 15px; text-align: left; }
+th { background: #14212d; color: var(--accent); padding: 15px; text-align: left; border-bottom: 2px solid var(--border); }
 td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
 .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; flex-direction:column; }
@@ -54,7 +58,7 @@ td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
     <div class="label">Temperature</div>
     <div id="v-temp" class="main-val">--</div>
     <div id="v-feels" class="sub-val" style="color: #ffaa00;">Feels Like: --</div>
-    <div id="v-dew-card" class="sub-val" style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Dew: --</div>
+    <div id="v-dew-card" class="sub-val" style="font-size: 15px; opacity: 0.9; margin-top: 8px;">Dew Point: --</div>
   </div>
   
   <div class="card" onclick="openChart('wind')">
@@ -97,14 +101,14 @@ td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 <div id="overlay-chart" class="overlay">
   <div class="toolbar">
     <h2 id="chart-title" style="flex:1; margin:0; font-size:18px;">ANALYSIS</h2>
-    <button class="btn btn-secondary" onclick="resetChartZoom()">RESET ZOOM</button>
-    <button class="btn btn-secondary" onclick="toggleParamTable()" id="toggle-table-btn">SHOW TABLE</button>
+    <button class="btn btn-secondary" onclick="resetChartZoom()">RESET</button>
+    <button class="btn btn-secondary" onclick="toggleParamTable()" id="toggle-table-btn">TABLE</button>
     <button class="btn" onclick="closeOverlay('overlay-chart')" style="background:#ff4d4d;">✕</button>
   </div>
   <div class="content">
     <div class="chart-box"><canvas id="main-canvas"></canvas></div>
     <div id="param-table-view" style="display:none;" class="table-wrapper">
-      <table><thead><tr><th>Time</th><th>Value</th></tr></thead><tbody id="param-body"></tbody></table>
+      <table><thead><tr><th>Time</th><th>Recorded Value</th></tr></thead><tbody id="param-body"></tbody></table>
     </div>
   </div>
 </div>
@@ -135,7 +139,8 @@ function getFeelsLike(t, h, w) {
 
 async function init() {
   const r = await fetch(`https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`);
-  historyData = (await r.json()).reverse();
+  const raw = await r.json();
+  historyData = Array.isArray(raw) ? raw.reverse() : [];
   const latest = historyData[historyData.length - 1];
   
   document.getElementById('v-temp').innerText = Math.round(latest.tempf) + "°";
@@ -172,34 +177,27 @@ function renderChart(type) {
   if(chartInstance) chartInstance.destroy();
   const keyMap = {temp:'tempf', wind:'windspeedmph', humidity:'humidity', solar:'solarradiation', rain:'dailyrainin', pressure:'baromrelin'};
   
-  const datasets = [{
-    label: type.toUpperCase(),
-    data: historyData.map(d => d[keyMap[type]]),
-    borderColor: '#00d2ff', fill: true, backgroundColor: 'rgba(0,210,255,0.05)', pointRadius: 0, tension: 0.3
-  }];
-
-  if(type === 'wind') datasets.push({ label: 'GUST', data: historyData.map(d => d.windgustmph), borderColor: '#ff4d4d', pointRadius: 0 });
-  if(type === 'temp') datasets.push({ label: 'DEW', data: historyData.map(d => calcDew(d.tempf, d.humidity)), borderColor: '#00ffaa', borderDash: [5,5], pointRadius: 0 });
-
   chartInstance = new Chart(ctx, {
     type: 'line',
-    data: { labels: historyData.map(d => new Date(d.date)), datasets },
+    data: { 
+      labels: historyData.map(d => new Date(d.date)),
+      datasets: [{
+        label: type.toUpperCase(),
+        data: historyData.map(d => d[keyMap[type]]),
+        borderColor: '#00d2ff', fill: true, backgroundColor: 'rgba(0,210,255,0.05)', pointRadius: 0, tension: 0.3
+      },
+      ...(type === 'wind' ? [{ label: 'GUST', data: historyData.map(d => d.windgustmph), borderColor: '#ff4d4d', pointRadius: 0 }] : []),
+      ...(type === 'temp' ? [{ label: 'DEW', data: historyData.map(d => calcDew(d.tempf, d.humidity)), borderColor: '#00ffaa', borderDash: [5,5], pointRadius: 0 }] : [])]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
       plugins: { 
         zoom: { pan: { enabled: true, mode: 'xy' }, zoom: { pinch: { enabled: true }, wheel: { enabled: true }, mode: 'xy' } },
-        tooltip: { enabled: true, backgroundColor: 'rgba(11, 20, 29, 0.9)', titleColor: '#00d2ff', bodyFont: { size: 14, weight: 'bold' } },
-        annotation: {
-          annotations: (type === 'temp') ? {
-            line1: { type: 'line', yMin: 32, yMax: 32, borderColor: 'rgba(255, 255, 255, 0.4)', borderWidth: 2, borderDash: [6, 6] }
-          } : {}
-        }
+        tooltip: { enabled: true, backgroundColor: 'rgba(11, 20, 29, 0.9)', titleColor: '#00d2ff' },
+        annotation: { annotations: (type === 'temp') ? { line1: { type: 'line', yMin: 32, yMax: 32, borderColor: 'rgba(255, 255, 255, 0.4)', borderWidth: 2, borderDash: [6, 6] } } : {} }
       },
-      scales: { 
-        x: { type: 'time', grid: { color: 'rgba(255,255,255,0.05)' } }, 
-        y: { grid: { color: 'rgba(255,255,255,0.1)' } } 
-      }
+      scales: { x: { type: 'time', grid: { color: 'rgba(255,255,255,0.05)' } }, y: { grid: { color: 'rgba(255,255,255,0.1)' } } }
     }
   });
 }
@@ -208,7 +206,7 @@ function openChart(type) {
   currentType = type;
   document.getElementById('overlay-chart').style.display = 'flex';
   document.getElementById('param-table-view').style.display = 'none';
-  document.getElementById('toggle-table-btn').innerText = 'SHOW TABLE';
+  document.getElementById('toggle-table-btn').innerText = 'TABLE';
   renderChart(type);
 }
 
@@ -218,13 +216,13 @@ function toggleParamTable() {
   const keyMap = {temp:'tempf', wind:'windspeedmph', humidity:'humidity', solar:'solarradiation', rain:'dailyrainin', pressure:'baromrelin'};
   if(view.style.display === 'none') {
     view.style.display = 'block';
-    btn.innerText = 'HIDE TABLE';
+    btn.innerText = 'HIDE';
     document.getElementById('param-body').innerHTML = historyData.slice().reverse().map(d => `
       <tr><td>${new Date(d.date).toLocaleTimeString()}</td><td><b>${d[keyMap[currentType]]}</b></td></tr>
     `).join('');
   } else {
     view.style.display = 'none';
-    btn.innerText = 'SHOW TABLE';
+    btn.innerText = 'TABLE';
   }
 }
 
