@@ -3,10 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>🐾 Cannoli Pro X</title>
+<title>Cannoli Pro</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
 <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
 
@@ -14,173 +18,231 @@
 :root { --bg: #060d14; --card: rgba(18, 32, 47, 0.95); --accent: #00d2ff; --border: rgba(255, 255, 255, 0.15); --text: #fff; }
 body { margin:0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
 header { background: #0b141d; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); }
-.controls { background: #0b141d; padding: 10px 25px; display: flex; gap: 10px; border-bottom: 1px solid var(--border); overflow-x: auto; }
-.btn { background: var(--accent); border: none; padding: 10px 15px; border-radius: 8px; font-weight: 900; cursor: pointer; color: #000; font-size: 12px; white-space: nowrap; }
-.btn-filter { background: #1c3d5a; color: white; opacity: 0.6; }
-.btn-filter.active { background: var(--accent); color: #000; opacity: 1; }
+.btn { background: var(--accent); border: none; padding: 12px 18px; border-radius: 10px; font-weight: 900; cursor: pointer; color: #000; font-size: 14px; }
+.btn-secondary { background: #1c3d5a; color: white; margin-right: 8px; }
 
 .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; padding: 25px; }
-.card { background: var(--card); padding: 30px 20px; border-radius: 28px; text-align: center; border: 2px solid var(--border); }
-.label { font-size: 14px; text-transform: uppercase; color: #8899a6; font-weight: 900; letter-spacing: 2px; }
-.main-val { font-size: 64px; font-weight: 900; margin: 5px 0; }
-.sub-val { font-size: 16px; color: var(--accent); font-weight: 700; }
-.occurrence { font-size: 11px; color: #5c6d7a; margin-top: 4px; display: block; }
+.card { background: var(--card); padding: 40px 20px; border-radius: 28px; text-align: center; border: 2px solid var(--border); cursor: pointer; }
+.label { font-size: 16px; text-transform: uppercase; color: #8899a6; font-weight: 900; letter-spacing: 2px; }
+.main-val { font-size: 80px; font-weight: 900; margin: 10px 0; line-height: 1; }
+.sub-val { font-size: 18px; color: var(--accent); font-weight: 700; }
 
-.summary-container { margin: 0 25px 25px; background: #0b141d; border-radius: 20px; border: 2px solid var(--border); overflow: hidden; }
-table { width: 100%; border-collapse: collapse; font-size: 16px; }
-th { background: #14212d; color: var(--accent); padding: 15px; text-align: left; text-transform: uppercase; font-size: 12px; }
+.summary-container { margin: 25px; background: #0b141d; border-radius: 20px; border: 2px solid var(--border); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 18px; font-weight: 600; }
+th { background: #14212d; color: var(--accent); padding: 15px; text-align: left; }
 td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
 .overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 1000; flex-direction:column; }
 .toolbar { display:flex; padding:15px; background: #0b141d; border-bottom: 2px solid var(--border); align-items: center; }
 .content { flex: 1; overflow-y: auto; padding: 20px; }
-.chart-box { height: 50vh; background: #000; border-radius: 16px; padding: 10px; position: relative; }
+.chart-box { height: 50vh; background: #000; border-radius: 16px; padding: 10px; touch-action: none; position: relative; }
+.table-wrapper { border-radius: 12px; border: 2px solid var(--border); overflow-x: auto; background: #0b141d; margin-top: 20px; }
 </style>
 </head>
 <body>
 
 <header>
-  <div style="font-weight: 900; font-size: 20px;">🐾 CANNOLI PRO X</div>
-  <button class="btn" onclick="location.reload()">REFRESH</button>
+  <div style="font-weight: 900; font-size: 22px;">🐾 CANNOLI PRO</div>
+  <div>
+    <button class="btn btn-secondary" onclick="openMaster()">MASTER LOG</button>
+    <button class="btn" onclick="location.reload()">REFRESH</button>
+  </div>
 </header>
-
-<div class="controls">
-  <button class="btn btn-filter" id="f-24" onclick="setFilter(1)">24 Hours</button>
-  <button class="btn btn-filter" id="f-7" onclick="setFilter(7)">7 Days</button>
-  <button class="btn btn-filter active" id="f-30" onclick="setFilter(30)">30 Days</button>
-</div>
 
 <div class="dashboard">
   <div class="card" onclick="openChart('temp')">
     <div class="label">Temperature</div>
     <div id="v-temp" class="main-val">--</div>
-    <div id="v-feels" class="sub-val">--</div>
-    <span id="v-temp-range" class="occurrence">--</span>
+    <div id="v-feels" class="sub-val" style="color: #ffaa00;">Feels Like: --</div>
+    <div id="v-dew-card" class="sub-val" style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Dew: --</div>
   </div>
   
   <div class="card" onclick="openChart('wind')">
-    <div class="label">Wind Speed</div>
+    <div class="label">Steady Wind</div>
     <div id="v-wind" class="main-val">--</div>
-    <div id="v-gust" class="sub-val">--</div>
-    <span id="v-wind-max" class="occurrence">--</span>
+    <div class="sub-val">MPH</div>
+  </div>
+
+  <div class="card" onclick="openChart('wind')">
+    <div class="label">Gusts</div>
+    <div id="v-gust" class="main-val">--</div>
+    <div id="v-maxgust" class="sub-val">24H Max: --</div>
   </div>
 
   <div class="card" onclick="openChart('humidity')">
     <div class="label">Humidity</div>
     <div id="v-hum" class="main-val">--</div>
-    <div id="v-pressure" class="sub-val">--</div>
   </div>
 
   <div class="card" onclick="openChart('solar')">
     <div class="label">Solar</div>
     <div id="v-sol" class="main-val">--</div>
-    <div id="v-uv" class="sub-val">--</div>
+    <div id="v-uv" class="sub-val">UV Index: --</div>
+  </div>
+
+  <div class="card" onclick="openChart('rain')">
+    <div class="label">Rainfall</div>
+    <div id="v-rain" class="main-val">--</div>
+    <div class="sub-val">DAILY INCHES</div>
   </div>
 </div>
 
 <div class="summary-container">
   <table>
-    <thead><tr><th id="summary-title">30-Day Risk Analysis</th><th>High</th><th>Low</th><th>Average</th></tr></thead>
+    <thead><tr><th>24H Weather Analysis</th><th>High</th><th>Low</th><th>Average</th></tr></thead>
     <tbody id="summary-body"></tbody>
   </table>
 </div>
 
 <div id="overlay-chart" class="overlay">
   <div class="toolbar">
-    <h2 id="chart-title" style="flex:1; margin:0; font-size:16px;">ANALYSIS</h2>
+    <h2 id="chart-title" style="flex:1; margin:0; font-size:18px;">ANALYSIS</h2>
+    <button class="btn btn-secondary" onclick="resetChartZoom()">RESET ZOOM</button>
+    <button class="btn btn-secondary" onclick="toggleParamTable()" id="toggle-table-btn">SHOW TABLE</button>
     <button class="btn" onclick="closeOverlay('overlay-chart')" style="background:#ff4d4d;">✕</button>
   </div>
-  <div class="content"><div class="chart-box"><canvas id="main-canvas"></canvas></div></div>
+  <div class="content">
+    <div class="chart-box"><canvas id="main-canvas"></canvas></div>
+    <div id="param-table-view" style="display:none;" class="table-wrapper">
+      <table><thead><tr><th>Time</th><th>Value</th></tr></thead><tbody id="param-body"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<div id="overlay-master" class="overlay">
+  <div class="toolbar"><h2 style="flex:1; margin:0;">MASTER LOG</h2><button class="btn" onclick="closeOverlay('overlay-master')">CLOSE</button></div>
+  <div class="content">
+    <div class="table-wrapper">
+      <table><thead><tr><th>Time</th><th>Temp</th><th>Dew</th><th>Wind</th><th>Gust</th><th>hPa</th></tr></thead>
+      <tbody id="master-body"></tbody></table>
+    </div>
+  </div>
 </div>
 
 <script>
-let allData = [], filteredData = [], chartInstance = null, currentDays = 30;
+const apiKey = "0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5";
+const appKey = "b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f";
+const mac = "4C:EB:D6:1E:22:57";
+let historyData = [], chartInstance = null, currentType = '';
+
+function calcDew(t, h) { return Math.round(t - ((100 - h) / 5 * 1.8)); }
+
+function getFeelsLike(t, h, w) {
+  if (t <= 50 && w > 3) return 35.74 + (0.6215 * t) - (35.75 * Math.pow(w, 0.16)) + (0.4275 * t * Math.pow(w, 0.16));
+  if (t >= 80) return -42.379 + 2.04901523*t + 10.14333127*h - 0.22475541*t*h - 0.00683783*t*t - 0.05481717*h*h + 0.00122874*t*t*h + 0.00085282*t*h*h - 0.00000199*t*t*h*h;
+  return t;
+}
 
 async function init() {
-    try {
-        const r = await fetch('./weather_history.json');
-        allData = await r.json();
-        allData.sort((a,b) => a.timestamp - b.timestamp);
-        setFilter(30); 
-    } catch (e) { console.error(e); }
-}
-
-function setFilter(days) {
-    currentDays = days;
-    const cutoff = (Date.now() / 1000) - (days * 24 * 60 * 60);
-    filteredData = allData.filter(d => d.timestamp >= cutoff);
-    
-    // Update UI Buttons
-    document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-    document.getElementById(`f-${days === 1 ? '24' : days}`).classList.add('active');
-    
-    updateDashboard();
-}
-
-function updateDashboard() {
-    if (!filteredData.length) return;
-    const latest = filteredData[filteredData.length - 1].ob;
-    
-    // Latest Values
-    document.getElementById('v-temp').innerText = Math.round(latest.tempF) + "°";
-    document.getElementById('v-feels').innerText = "Feels: " + Math.round(latest.feelslikeF || latest.tempF) + "°";
-    document.getElementById('v-wind').innerText = Math.round(latest.windSpeedMPH);
-    document.getElementById('v-gust').innerText = "Gust: " + Math.round(latest.windGustMPH || 0) + " mph";
-    document.getElementById('v-hum').innerText = latest.humidity + "%";
-    document.getElementById('v-pressure').innerText = latest.pressureMB + " hPa";
-    document.getElementById('v-sol').innerText = latest.solradWM2 || 0;
-    document.getElementById('v-uv').innerText = "UV: " + (latest.uv || 0);
-
-    // Max/Min Occurrence Strings
-    const tempVals = filteredData.map(d => ({ v: d.ob.tempF, t: d.timestamp }));
-    const maxT = tempVals.reduce((prev, curr) => (prev.v > curr.v) ? prev : curr);
-    const minT = tempVals.reduce((prev, curr) => (prev.v < curr.v) ? prev : curr);
-    
-    const windVals = filteredData.map(d => ({ v: d.ob.windGustMPH || 0, t: d.timestamp }));
-    const maxW = windVals.reduce((prev, curr) => (prev.v > curr.v) ? prev : curr);
-
-    document.getElementById('v-temp-range').innerText = `Max: ${Math.round(maxT.v)}° (${luxon.DateTime.fromSeconds(maxT.t).toFormat('LLL d, h:mm a')})`;
-    document.getElementById('v-wind-max').innerText = `Peak Gust: ${Math.round(maxW.v)} mph (${luxon.DateTime.fromSeconds(maxW.t).toFormat('LLL d, h:mm a')})`;
-
-    document.getElementById('summary-title').innerText = `${currentDays === 1 ? '24-Hour' : currentDays + '-Day'} Risk Analysis`;
-    buildSummary();
+  const r = await fetch(`https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`);
+  historyData = (await r.json()).reverse();
+  const latest = historyData[historyData.length - 1];
+  
+  document.getElementById('v-temp').innerText = Math.round(latest.tempf) + "°";
+  document.getElementById('v-feels').innerText = "Feels Like: " + Math.round(getFeelsLike(latest.tempf, latest.humidity, latest.windspeedmph)) + "°";
+  document.getElementById('v-dew-card').innerText = "Dew Point: " + calcDew(latest.tempf, latest.humidity) + "°";
+  document.getElementById('v-wind').innerText = Math.round(latest.windspeedmph);
+  document.getElementById('v-gust').innerText = Math.round(latest.windgustmph);
+  document.getElementById('v-maxgust').innerText = "24H Max: " + Math.round(Math.max(...historyData.map(d => d.windgustmph))) + " mph";
+  document.getElementById('v-hum').innerText = latest.humidity + "%";
+  document.getElementById('v-sol').innerText = latest.solarradiation;
+  document.getElementById('v-uv').innerText = "UV Index: " + latest.uv;
+  document.getElementById('v-rain').innerText = latest.dailyrainin.toFixed(2);
+  
+  buildSummary();
 }
 
 function buildSummary() {
-    const params = [
-        { n: 'Temperature', k: 'tempF', u: '°' },
-        { n: 'Wind Speed', k: 'windSpeedMPH', u: ' mph' },
-        { n: 'Humidity', k: 'humidity', u: '%' }
-    ];
+  const params = [
+    { n: 'Temperature', k: 'tempf', u: '°' },
+    { n: 'Wind Speed', k: 'windspeedmph', u: ' mph' },
+    { n: 'Wind Gust', k: 'windgustmph', u: ' mph' },
+    { n: 'Humidity', k: 'humidity', u: '%' },
+    { n: 'Pressure', k: 'baromrelin', f: v => (v * 33.86).toFixed(0) + ' hPa' }
+  ];
+  document.getElementById('summary-body').innerHTML = params.map(p => {
+    const vals = historyData.map(d => d[p.k]);
+    const high = Math.max(...vals), low = Math.min(...vals), avg = vals.reduce((a,b)=>a+b)/vals.length;
+    return `<tr><td>${p.n}</td><td>${p.f?p.f(high):Math.round(high)+p.u}</td><td>${p.f?p.f(low):Math.round(low)+p.u}</td><td>${p.f?p.f(avg):Math.round(avg)+p.u}</td></tr>`;
+  }).join('');
+}
 
-    document.getElementById('summary-body').innerHTML = params.map(p => {
-        const vals = filteredData.map(d => d.ob[p.k]).filter(v => v !== null);
-        const high = Math.max(...vals), low = Math.min(...vals), avg = vals.reduce((a,b)=>a+b)/vals.length;
-        return `<tr><td>${p.n}</td><td>${Math.round(high)}${p.u}</td><td>${Math.round(low)}${p.u}</td><td>${Math.round(avg)}${p.u}</td></tr>`;
-    }).join('');
+function renderChart(type) {
+  const ctx = document.getElementById('main-canvas');
+  if(chartInstance) chartInstance.destroy();
+  const keyMap = {temp:'tempf', wind:'windspeedmph', humidity:'humidity', solar:'solarradiation', rain:'dailyrainin', pressure:'baromrelin'};
+  
+  const datasets = [{
+    label: type.toUpperCase(),
+    data: historyData.map(d => d[keyMap[type]]),
+    borderColor: '#00d2ff', fill: true, backgroundColor: 'rgba(0,210,255,0.05)', pointRadius: 0, tension: 0.3
+  }];
+
+  if(type === 'wind') datasets.push({ label: 'GUST', data: historyData.map(d => d.windgustmph), borderColor: '#ff4d4d', pointRadius: 0 });
+  if(type === 'temp') datasets.push({ label: 'DEW', data: historyData.map(d => calcDew(d.tempf, d.humidity)), borderColor: '#00ffaa', borderDash: [5,5], pointRadius: 0 });
+
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: historyData.map(d => new Date(d.date)), datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { 
+        zoom: { pan: { enabled: true, mode: 'xy' }, zoom: { pinch: { enabled: true }, wheel: { enabled: true }, mode: 'xy' } },
+        tooltip: { enabled: true, backgroundColor: 'rgba(11, 20, 29, 0.9)', titleColor: '#00d2ff', bodyFont: { size: 14, weight: 'bold' } },
+        annotation: {
+          annotations: (type === 'temp') ? {
+            line1: { type: 'line', yMin: 32, yMax: 32, borderColor: 'rgba(255, 255, 255, 0.4)', borderWidth: 2, borderDash: [6, 6] }
+          } : {}
+        }
+      },
+      scales: { 
+        x: { type: 'time', grid: { color: 'rgba(255,255,255,0.05)' } }, 
+        y: { grid: { color: 'rgba(255,255,255,0.1)' } } 
+      }
+    }
+  });
 }
 
 function openChart(type) {
-    document.getElementById('overlay-chart').style.display = 'flex';
-    const ctx = document.getElementById('main-canvas');
-    if(chartInstance) chartInstance.destroy();
-    
-    const keyMap = { temp: 'tempF', wind: 'windSpeedMPH', humidity: 'humidity', solar: 'solradWM2' };
-    
-    chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: { datasets: [{
-            label: type.toUpperCase(),
-            data: filteredData.map(d => ({ x: d.timestamp * 1000, y: d.ob[keyMap[type]] })),
-            borderColor: '#00d2ff', fill: true, backgroundColor: 'rgba(0,210,255,0.05)', pointRadius: 0, tension: 0.1
-        }]},
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: { x: { type: 'time', time: { unit: currentDays === 1 ? 'hour' : 'day' } } }
-        }
-    });
+  currentType = type;
+  document.getElementById('overlay-chart').style.display = 'flex';
+  document.getElementById('param-table-view').style.display = 'none';
+  document.getElementById('toggle-table-btn').innerText = 'SHOW TABLE';
+  renderChart(type);
 }
 
+function toggleParamTable() {
+  const view = document.getElementById('param-table-view');
+  const btn = document.getElementById('toggle-table-btn');
+  const keyMap = {temp:'tempf', wind:'windspeedmph', humidity:'humidity', solar:'solarradiation', rain:'dailyrainin', pressure:'baromrelin'};
+  if(view.style.display === 'none') {
+    view.style.display = 'block';
+    btn.innerText = 'HIDE TABLE';
+    document.getElementById('param-body').innerHTML = historyData.slice().reverse().map(d => `
+      <tr><td>${new Date(d.date).toLocaleTimeString()}</td><td><b>${d[keyMap[currentType]]}</b></td></tr>
+    `).join('');
+  } else {
+    view.style.display = 'none';
+    btn.innerText = 'SHOW TABLE';
+  }
+}
+
+function openMaster() {
+  document.getElementById('overlay-master').style.display = 'flex';
+  document.getElementById('master-body').innerHTML = historyData.slice().reverse().map(d => `
+    <tr>
+      <td>${new Date(d.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+      <td>${Math.round(d.tempf)}°</td>
+      <td>${calcDew(d.tempf, d.humidity)}°</td>
+      <td>${Math.round(d.windspeedmph)}</td>
+      <td>${Math.round(d.windgustmph)}</td>
+      <td>${(d.baromrelin * 33.86).toFixed(0)}</td>
+    </tr>
+  `).join('');
+}
+
+function resetChartZoom() { if(chartInstance) chartInstance.resetZoom(); }
 function closeOverlay(id) { document.getElementById(id).style.display = 'none'; }
 init();
 </script>
