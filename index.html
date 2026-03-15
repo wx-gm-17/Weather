@@ -1,121 +1,83 @@
 <!DOCTYPE html>
-<html lang="en" translate="no">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cannoli Pro</title>
+<title>Cannoli Pro v2</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
-<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
-<script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1"></script>
 
 <style>
+
 :root{
 --bg:#060d14;
---card:rgba(18,32,47,0.95);
+--card:#12202f;
 --accent:#00d2ff;
---border:rgba(255,255,255,0.15);
---text:#fff;
+--border:rgba(255,255,255,.15);
+--text:white;
 }
 
 body{
 margin:0;
 background:var(--bg);
 color:var(--text);
-font-family:'Inter',sans-serif;
+font-family:Inter;
 }
 
 header{
-background:#0b141d;
-padding:20px;
 display:flex;
 justify-content:space-between;
 align-items:center;
+padding:20px;
+background:#0b141d;
 border-bottom:2px solid var(--border);
 }
 
 .btn{
 background:var(--accent);
 border:none;
-padding:12px 18px;
-border-radius:10px;
+padding:10px 16px;
+border-radius:8px;
 font-weight:900;
 cursor:pointer;
-color:#000;
-}
-
-.btn-secondary{
-background:#1c3d5a;
-color:white;
-margin-right:8px;
 }
 
 .dashboard{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
 gap:20px;
-padding:25px;
+padding:20px;
 }
 
 .card{
 background:var(--card);
-padding:40px 20px;
-border-radius:28px;
+border-radius:20px;
+padding:30px;
 text-align:center;
 border:2px solid var(--border);
 cursor:pointer;
 }
 
 .label{
-font-size:16px;
-text-transform:uppercase;
-color:#8899a6;
-font-weight:900;
+font-size:14px;
 letter-spacing:2px;
+text-transform:uppercase;
+opacity:.7;
 }
 
-.main-val{
-font-size:80px;
+.main{
+font-size:64px;
 font-weight:900;
-margin:10px 0;
 }
 
-.sub-val{
-font-size:18px;
+.sub{
 color:var(--accent);
-font-weight:700;
-}
-
-.summary-container{
-margin:25px;
-background:#0b141d;
-border-radius:20px;
-border:2px solid var(--border);
-overflow:hidden;
-}
-
-table{
-width:100%;
-border-collapse:collapse;
-font-size:18px;
-font-weight:600;
-}
-
-th{
-background:#14212d;
-color:var(--accent);
-padding:15px;
-text-align:left;
-}
-
-td{
-padding:12px 15px;
-border-bottom:1px solid rgba(255,255,255,0.05);
 }
 
 .overlay{
@@ -125,130 +87,146 @@ top:0;
 left:0;
 width:100%;
 height:100%;
-background:var(--bg);
-z-index:1000;
+background:#060d14;
 flex-direction:column;
-}
-
-.toolbar{
-display:flex;
-padding:15px;
-background:#0b141d;
-border-bottom:2px solid var(--border);
-}
-
-.content{
-flex:1;
-overflow-y:auto;
-padding:20px;
+z-index:10;
 }
 
 .chart-box{
-height:50vh;
-background:#000;
-border-radius:16px;
-padding:10px;
+height:60vh;
+padding:20px;
 }
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+td,th{
+padding:8px;
+border-bottom:1px solid rgba(255,255,255,.1);
+}
+
+.alert{
+background:#ff3b3b;
+text-align:center;
+padding:8px;
+font-weight:900;
+}
+
 </style>
 </head>
 
 <body>
 
 <header>
-<div style="font-weight:900;font-size:22px;">🐾 CANNOLI PRO</div>
-<button class="btn" onclick="location.reload()">REFRESH</button>
+<div style="font-weight:900;font-size:20px;">🐾 Cannoli Pro v2</div>
+<button class="btn" onclick="location.reload()">Refresh</button>
 </header>
+
+<div id="alerts"></div>
 
 <div class="dashboard">
 
 <div class="card" onclick="openChart('temp')">
 <div class="label">Temperature</div>
-<div id="v-temp" class="main-val">--</div>
-<div id="v-feels" class="sub-val">Feels Like --</div>
-<div id="v-dew-card" class="sub-val">Dew --</div>
+<div id="temp" class="main">--</div>
+<div id="feels" class="sub"></div>
 </div>
 
 <div class="card" onclick="openChart('wind')">
 <div class="label">Wind</div>
-<div id="v-wind" class="main-val">--</div>
-<div class="sub-val">MPH</div>
+<div id="wind" class="main">--</div>
+<div id="dir" class="sub"></div>
 </div>
 
 <div class="card">
 <div class="label">Gust</div>
-<div id="v-gust" class="main-val">--</div>
-<div id="v-maxgust" class="sub-val">24H Max --</div>
+<div id="gust" class="main">--</div>
 </div>
 
 <div class="card">
 <div class="label">Humidity</div>
-<div id="v-hum" class="main-val">--</div>
+<div id="hum" class="main">--</div>
 </div>
 
 <div class="card">
 <div class="label">Solar</div>
-<div id="v-sol" class="main-val">--</div>
-<div id="v-uv" class="sub-val">UV --</div>
+<div id="solar" class="main">--</div>
 </div>
 
 <div class="card">
-<div class="label">Rain</div>
-<div id="v-rain" class="main-val">--</div>
-<div class="sub-val">Daily Inches</div>
+<div class="label">Rain Today</div>
+<div id="rain" class="main">--</div>
 </div>
 
 </div>
 
-<div class="summary-container">
-<table>
-<thead>
-<tr>
-<th>24H Weather Analysis</th>
-<th>High</th>
-<th>Low</th>
-<th>Average</th>
-</tr>
-</thead>
-<tbody id="summary-body"></tbody>
-</table>
+<div style="padding:20px">
+
+<h2>Radar</h2>
+
+<iframe
+width="100%"
+height="500"
+src="https://www.rainviewer.com/map.html?loc=39.80,-105.09&zoom=7"
+style="border:0;border-radius:12px">
+</iframe>
+
 </div>
 
-<div id="overlay-chart" class="overlay">
-<div class="toolbar">
-<h2 id="chart-title" style="flex:1;margin:0;">Chart</h2>
-<button class="btn" onclick="closeOverlay()">Close</button>
-</div>
+<div id="chartOverlay" class="overlay">
 
-<div class="content">
+<header>
+
+<button class="btn" onclick="setRange('24h')">24H</button>
+<button class="btn" onclick="setRange('7d')">7D</button>
+<button class="btn" onclick="setRange('30d')">30D</button>
+
+<button class="btn" onclick="closeChart()">Close</button>
+
+</header>
+
 <div class="chart-box">
-<canvas id="main-canvas"></canvas>
+<canvas id="chart"></canvas>
 </div>
-</div>
+
 </div>
 
 <script>
 
-const apiKey="0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf8431e692ce2a5"
+const apiKey="0b536def96f74e888a0f2ac984b5fda8caaa5d23e6d645afbdf843"
 const appKey="b8c618a136b34f788d4b62b59ef4bff0af7948990eb14c17a90062bdef78781f"
 const mac="4C:EB:D6:1E:22:57"
 
 let historyData=[]
-let chartInstance=null
-let currentType=""
+let chart
+let currentType="temp"
 
-function calcDew(t,h){
+function dew(t,h){
 return Math.round(t-((100-h)/5*1.8))
 }
 
-function getFeelsLike(t,h,w){
+function feelsLike(t,h,w){
 
 if(t<=50 && w>3)
 return 35.74+(0.6215*t)-(35.75*Math.pow(w,.16))+(0.4275*t*Math.pow(w,.16))
 
 if(t>=80)
-return -42.379+2.04901523*t+10.14333127*h-0.22475541*t*h
+return -42.379+2.04901523*t+10.14333127*h
 
 return t
+}
+
+function degToCompass(num){
+
+const val=Math.floor((num/22.5)+0.5)
+
+const arr=["N","NNE","NE","ENE","E","ESE","SE","SSE",
+"S","SSW","SW","WSW","W","WNW","NW","NNW"]
+
+return arr[val%16]
+
 }
 
 async function loadHistory(){
@@ -259,35 +237,6 @@ historyData=(await r.json()).reverse()
 
 updateDashboard(historyData[historyData.length-1])
 
-buildSummary()
-
-}
-
-function updateDashboard(d){
-
-document.getElementById("v-temp").innerText=Math.round(d.tempf)+"°"
-
-document.getElementById("v-feels").innerText=
-"Feels Like "+Math.round(getFeelsLike(d.tempf,d.humidity,d.windspeedmph))+"°"
-
-document.getElementById("v-dew-card").innerText=
-"Dew "+calcDew(d.tempf,d.humidity)+"°"
-
-document.getElementById("v-wind").innerText=Math.round(d.windspeedmph)
-
-document.getElementById("v-gust").innerText=Math.round(d.windgustmph)
-
-document.getElementById("v-maxgust").innerText=
-"24H Max "+Math.max(...historyData.map(x=>x.windgustmph)).toFixed(0)
-
-document.getElementById("v-hum").innerText=d.humidity+"%"
-
-document.getElementById("v-sol").innerText=d.solarradiation
-
-document.getElementById("v-uv").innerText="UV "+d.uv
-
-document.getElementById("v-rain").innerText=d.dailyrainin.toFixed(2)
-
 }
 
 async function updateLive(){
@@ -296,77 +245,47 @@ const r=await fetch(`https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${ap
 
 const data=await r.json()
 
-const latest=data[0]
+const d=data[0]
 
-historyData.push(latest)
+historyData.push(d)
 
-updateDashboard(latest)
+updateDashboard(d)
 
-if(chartInstance) renderChart(currentType)
-
-}
-
-function buildSummary(){
-
-const params=[
-{n:"Temperature",k:"tempf",u:"°"},
-{n:"Wind",k:"windspeedmph",u:" mph"},
-{n:"Gust",k:"windgustmph",u:" mph"},
-{n:"Humidity",k:"humidity",u:"%"}
-]
-
-document.getElementById("summary-body").innerHTML=params.map(p=>{
-
-const vals=historyData.map(d=>d[p.k])
-
-const high=Math.max(...vals)
-const low=Math.min(...vals)
-const avg=vals.reduce((a,b)=>a+b)/vals.length
-
-return `<tr>
-<td>${p.n}</td>
-<td>${Math.round(high)+p.u}</td>
-<td>${Math.round(low)+p.u}</td>
-<td>${Math.round(avg)+p.u}</td>
-</tr>`
-
-}).join("")
+if(chart) drawChart()
 
 }
 
-function renderChart(type){
+function updateDashboard(d){
 
-const ctx=document.getElementById("main-canvas")
+temp.innerText=Math.round(d.tempf)+"°"
 
-if(chartInstance) chartInstance.destroy()
+feels.innerText="Feels "+Math.round(feelsLike(d.tempf,d.humidity,d.windspeedmph))+"°"
 
-const keyMap={
-temp:"tempf",
-wind:"windspeedmph",
-humidity:"humidity"
+wind.innerText=Math.round(d.windspeedmph)
+
+dir.innerText=degToCompass(d.winddir)
+
+gust.innerText=Math.round(d.windgustmph)
+
+hum.innerText=d.humidity+"%"
+
+solar.innerText=d.solarradiation
+
+rain.innerText=d.dailyrainin.toFixed(2)
+
+checkAlerts(d)
+
 }
 
-chartInstance=new Chart(ctx,{
-type:"line",
-data:{
-labels:historyData.map(d=>new Date(d.date)),
-datasets:[{
-label:type,
-data:historyData.map(d=>d[keyMap[type]]),
-borderColor:"#00d2ff",
-pointRadius:0,
-tension:.3
-}]
-},
-options:{
-responsive:true,
-maintainAspectRatio:false,
-scales:{
-x:{type:"time"},
-y:{}
-}
-}
-})
+function checkAlerts(d){
+
+alerts.innerHTML=""
+
+if(d.tempf<=32)
+alerts.innerHTML+="<div class='alert'>Freeze Warning</div>"
+
+if(d.windgustmph>=40)
+alerts.innerHTML+="<div class='alert'>High Wind Gusts</div>"
 
 }
 
@@ -374,15 +293,71 @@ function openChart(type){
 
 currentType=type
 
-document.getElementById("overlay-chart").style.display="flex"
+chartOverlay.style.display="flex"
 
-renderChart(type)
+drawChart()
 
 }
 
-function closeOverlay(){
+function closeChart(){
+chartOverlay.style.display="none"
+}
 
-document.getElementById("overlay-chart").style.display="none"
+function drawChart(){
+
+const map={
+temp:"tempf",
+wind:"windspeedmph"
+}
+
+const data=historyData
+
+if(chart) chart.destroy()
+
+chart=new Chart(chartCanvas.getContext("2d"),{
+
+type:"line",
+
+data:{
+labels:data.map(d=>new Date(d.date)),
+datasets:[{
+label:currentType,
+data:data.map(d=>d[map[currentType]]),
+borderColor:"#00d2ff",
+pointRadius:0,
+tension:.3
+}]
+},
+
+options:{
+responsive:true,
+interaction:{mode:"index"},
+plugins:{
+zoom:{
+zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:"x"},
+pan:{enabled:true,mode:"x"}
+}
+},
+scales:{
+x:{type:"time"}
+}
+}
+
+})
+
+}
+
+function setRange(range){
+
+let cutoff=Date.now()
+
+if(range==="24h") cutoff-=24*3600000
+if(range==="7d") cutoff-=7*86400000
+if(range==="30d") cutoff-=30*86400000
+
+historyData=historyData.filter(d=>new Date(d.date)>cutoff)
+
+drawChart()
 
 }
 
