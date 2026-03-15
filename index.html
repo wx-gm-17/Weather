@@ -42,6 +42,9 @@ td { padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 <body>
 
 <header>
+  <div id="last-update" style="text-align:center;font-size:14px;color:#8899a6;margin-top:10px;">
+Last Observation: --
+</div>
   <div style="font-weight: 900; font-size: 22px;">🐾 CANNOLI PRO</div>
   <div>
     <button class="btn btn-secondary" onclick="openMaster()">MASTER LOG</button>
@@ -137,6 +140,16 @@ async function init() {
   const r = await fetch(`https://rt.ambientweather.net/v1/devices/${mac}?apiKey=${apiKey}&applicationKey=${appKey}&limit=288`);
   historyData = (await r.json()).reverse();
   const latest = historyData[historyData.length - 1];
+  const lastObs = new Date(latest.date);
+document.getElementById('last-update').innerText =
+  "Last Observation: " + lastObs.toLocaleString([], {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
   
   document.getElementById('v-temp').innerText = Math.round(latest.tempf) + "°";
   document.getElementById('v-feels').innerText = "Feels Like: " + Math.round(getFeelsLike(latest.tempf, latest.humidity, latest.windspeedmph)) + "°";
@@ -232,7 +245,14 @@ function openMaster() {
   document.getElementById('overlay-master').style.display = 'flex';
   document.getElementById('master-body').innerHTML = historyData.slice().reverse().map(d => `
     <tr>
-      <td>${new Date(d.date).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+     <td>${new Date(d.date).toLocaleString([], {
+  year:'numeric',
+  month:'short',
+  day:'numeric',
+  hour:'2-digit',
+  minute:'2-digit'
+})}</td>
+
       <td>${Math.round(d.tempf)}°</td>
       <td>${calcDew(d.tempf, d.humidity)}°</td>
       <td>${Math.round(d.windspeedmph)}</td>
